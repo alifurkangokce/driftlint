@@ -1,5 +1,7 @@
 # driftlint
 
+[![npm](https://img.shields.io/npm/v/%40alifurkangokce%2Fdriftlint)](https://www.npmjs.com/package/@alifurkangokce/driftlint) [![ci](https://github.com/alifurkangokce/driftlint/actions/workflows/ci.yml/badge.svg)](https://github.com/alifurkangokce/driftlint/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Your CLAUDE.md is lying to your agent.** driftlint finds the claims in your agent context files — `CLAUDE.md`, `AGENTS.md`, skills, subagents, cursor rules — that your code no longer supports.
 
 ```bash

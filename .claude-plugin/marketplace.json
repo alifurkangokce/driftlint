@@ -1,0 +1,14 @@
+{
+  "name": "driftlint",
+  "owner": {
+    "name": "alifurkangokce",
+    "url": "https://github.com/alifurkangokce"
+  },
+  "plugins": [
+    {
+      "name": "driftlint",
+      "source": "./",
+      "description": "Find and fix the claims in your agent context files (CLAUDE.md, AGENTS.md, skills) that your code no longer supports."
+    }
+  ]
+}

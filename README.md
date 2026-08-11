@@ -6,6 +6,8 @@
 npx driftlint
 ```
 
+![driftlint demo](docs/demo.gif)
+
 Zero config. No API key. Works on any repo.
 
 ## Why
@@ -44,6 +46,15 @@ This mentions `hypothetical/example.ts` on purpose.
 ## Scanned files
 
 `CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md` (anywhere in the tree), `.claude/skills/*/SKILL.md`, `.claude/agents/*.md`, `.claude/commands/*.md`, `.cursor/rules/*`, `.github/copilot-instructions.md`.
+
+## Claude Code plugin
+
+driftlint also ships as a Claude Code plugin: a `/driftlint` command that runs the scan and then **fixes** the drift it finds (with your approval).
+
+```
+/plugin marketplace add alifurkangokce/driftlint
+/plugin install driftlint@driftlint
+```
 
 ## Roadmap
 

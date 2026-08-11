@@ -1,0 +1,13 @@
+{
+  "name": "driftlint",
+  "description": "Find and fix the claims in your agent context files (CLAUDE.md, AGENTS.md, skills) that your code no longer supports.",
+  "version": "0.1.0",
+  "author": {
+    "name": "alifurkangokce",
+    "url": "https://github.com/alifurkangokce"
+  },
+  "homepage": "https://github.com/alifurkangokce/driftlint",
+  "repository": "https://github.com/alifurkangokce/driftlint",
+  "license": "MIT",
+  "keywords": ["lint", "context-files", "knowledge-decay", "claude-md", "agents-md"]
+}

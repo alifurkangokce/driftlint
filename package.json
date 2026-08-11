@@ -1,0 +1,38 @@
+{
+  "name": "driftlint",
+  "version": "0.1.0",
+  "description": "Finds the claims in your CLAUDE.md / AGENTS.md / skills that your code no longer supports.",
+  "type": "module",
+  "bin": {
+    "driftlint": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -w -p tsconfig.json",
+    "test": "npm run build && node dist/cli.js test/fixture --skill-budget 300 --json"
+  },
+  "keywords": [
+    "claude-code",
+    "claude-md",
+    "agents-md",
+    "agent-skills",
+    "lint",
+    "documentation",
+    "knowledge-decay",
+    "ai-agents",
+    "context-files"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "typescript": "^5.5.0"
+  }
+}

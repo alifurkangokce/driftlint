@@ -1,5 +1,5 @@
 {
-  "name": "driftlint",
+  "name": "@alifurkangokce/driftlint",
   "version": "0.1.1",
   "description": "Finds the claims in your CLAUDE.md / AGENTS.md / skills that your code no longer supports.",
   "type": "module",
@@ -32,6 +32,15 @@
     "context-files"
   ],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alifurkangokce/driftlint.git"
+  },
+  "homepage": "https://github.com/alifurkangokce/driftlint#readme",
+  "bugs": {
+    "url": "https://github.com/alifurkangokce/driftlint/issues"
+  },
+  "author": "alifurkangokce",
   "devDependencies": {
     "@types/node": "^20.14.0",
     "typescript": "^5.5.0"

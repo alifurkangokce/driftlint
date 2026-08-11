@@ -5,7 +5,7 @@ description: Scan this repo's agent context files for drift (dead paths, dead co
 Run driftlint on the current repository and fix the drift it finds.
 
 1. Run the scanner, preferring the published package and falling back to the repo build:
-   - `npx -y driftlint --json --no-fail`
+   - `npx -y @alifurkangokce/driftlint --json --no-fail`
    - if that fails: `npx -y github:alifurkangokce/driftlint --json --no-fail`
 2. If there are no findings, say so and stop — do not invent work.
 3. For each finding, propose a fix in the context file itself (never in the code):

@@ -3,7 +3,7 @@
 **Your CLAUDE.md is lying to your agent.** driftlint finds the claims in your agent context files — `CLAUDE.md`, `AGENTS.md`, skills, subagents, cursor rules — that your code no longer supports.
 
 ```bash
-npx driftlint
+npx @alifurkangokce/driftlint
 ```
 
 ![driftlint demo](docs/demo.gif)
@@ -28,11 +28,13 @@ Agent knowledge decays like code documentation always has — except now the rea
 ## Usage
 
 ```bash
-npx driftlint                 # scan the current repo
-npx driftlint path/to/repo    # scan another repo
-npx driftlint --json          # machine-readable output (CI-friendly)
-npx driftlint --no-fail       # report but always exit 0
+npx @alifurkangokce/driftlint                 # scan the current repo
+npx @alifurkangokce/driftlint path/to/repo    # scan another repo
+npx @alifurkangokce/driftlint --json          # machine-readable output (CI-friendly)
+npx @alifurkangokce/driftlint --no-fail       # report but always exit 0
 ```
+
+Installed globally (`npm i -g @alifurkangokce/driftlint`) the command is just `driftlint`.
 
 Exit code is `1` when errors are found, so it drops straight into CI.
 

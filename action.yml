@@ -1,0 +1,29 @@
+name: "driftlint"
+description: "Find the claims in your agent context files (CLAUDE.md, AGENTS.md, skills) that your code no longer supports."
+branding:
+  icon: "alert-triangle"
+  color: "orange"
+inputs:
+  path:
+    description: "Directory to scan"
+    required: false
+    default: "."
+  skill-budget:
+    description: "System-prompt char budget for skill descriptions"
+    required: false
+    default: "15000"
+  fail:
+    description: "Fail the job when errors are found"
+    required: false
+    default: "true"
+runs:
+  using: "composite"
+  steps:
+    - name: Run driftlint
+      shell: bash
+      run: |
+        ARGS="${{ inputs.path }} --skill-budget ${{ inputs.skill-budget }}"
+        if [ "${{ inputs.fail }}" != "true" ]; then
+          ARGS="$ARGS --no-fail"
+        fi
+        npx -y @alifurkangokce/driftlint@latest $ARGS

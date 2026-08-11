@@ -38,7 +38,19 @@ npx @alifurkangokce/driftlint --no-fail       # report but always exit 0
 
 Installed globally (`npm i -g @alifurkangokce/driftlint`) the command is just `driftlint`.
 
-Exit code is `1` when errors are found, so it drops straight into CI.
+Exit code is `1` when errors are found, so it drops straight into CI. Or use the action:
+
+```yaml
+# .github/workflows/driftlint.yml
+on: [pull_request]
+jobs:
+  driftlint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }   # full history enables the staleness check
+      - uses: alifurkangokce/driftlint@main
+```
 
 Suppress a false positive with a comment on the same line or the line above:
 

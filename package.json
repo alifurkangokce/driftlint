@@ -1,6 +1,6 @@
 {
   "name": "driftlint",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Finds the claims in your CLAUDE.md / AGENTS.md / skills that your code no longer supports.",
   "type": "module",
   "bin": {

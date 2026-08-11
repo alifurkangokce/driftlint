@@ -45,6 +45,10 @@ export function extractRefs(file: ContextFile): { paths: PathRef[]; commands: Co
     }
 
     // --- paths ---
+    // Tree-diagram lines (├── page/) carry entries relative to their parent
+    // entry, which we don't reconstruct — skip them to avoid false positives.
+    if (/[│├└╰]|(^\s*(\|--|`--))/.test(line)) continue;
+
     // Candidates come from inline code spans and, inside fences, whole-line tokens.
     const candidates: string[] = [];
     for (const m of line.matchAll(/`([^`\n]+)`/g)) {
@@ -86,9 +90,20 @@ const BARE_FILE_EXTS = new Set([
   "sql", "html", "css", "scss", "less", "xml", "csv", "proto", "tf", "http",
 ]);
 
+/** Framework names that pattern-match as filenames but never are. */
+const WELL_KNOWN_TECH = new Set([
+  "next.js", "node.js", "vue.js", "react.js", "three.js", "d3.js",
+  "express.js", "nest.js", "nuxt.js", "angular.js", "ember.js", "alpine.js",
+  "chart.js", "moment.js", "socket.io", "discord.js", "pdf.js", "video.js",
+  "p5.js", "obsidian.md",
+]);
+
 function looksLikePath(s: string): boolean {
   if (/\s/.test(s)) return false;
   if (s.includes("://") || s.startsWith("mailto:")) return false;
+  if (WELL_KNOWN_TECH.has(s.toLowerCase())) return false;
+  // *.local.* files are gitignored-by-convention — absence is not drift
+  if (/\.local\.[A-Za-z0-9]+$/.test(s)) return false;
   // globs, placeholders, expressions, flags
   if (/[*?<>{}$()[\]|=]/.test(s)) return false;
   if (s.startsWith("-") || s.startsWith("#") || s.startsWith("@")) return false;

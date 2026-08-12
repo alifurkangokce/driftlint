@@ -17,6 +17,7 @@ function kindOf(rel: string): ContextFile["kind"] | null {
   if (base === ".clinerules") return "cline";
   if (/(^|\/)\.clinerules\/[^/]+\.md$/.test(rel)) return "cline";
   if (/(^|\/)\.opencode\/(agent|command|knowledge)\/.+\.md$/.test(rel)) return "opencode";
+  if (/(^|\/)\.agent-memory\/(approved|proposals)\/[^/]+\.md$/.test(rel)) return "memory";
   return null;
 }
 

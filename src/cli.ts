@@ -11,6 +11,9 @@ const HELP = `driftlint — finds the claims in your CLAUDE.md / AGENTS.md / ski
 
 Usage:
   driftlint [path] [options]
+  driftlint memory <propose|review|list|sync>   Reviewed Memory: agents propose,
+                       humans approve, \`sync\` writes the approved set into
+                       CLAUDE.md/AGENTS.md/GEMINI.md as a verified block
 
 Options:
   --json               machine-readable output
@@ -108,6 +111,10 @@ function readVersion(): string {
 }
 
 async function main(): Promise<void> {
+  if (process.argv[2] === "memory") {
+    const { runMemoryCli } = await import("./memory.js");
+    process.exit(await runMemoryCli(process.argv.slice(3)));
+  }
   const parsed = parseArgs(process.argv.slice(2));
   if (parsed === "help") {
     console.log(HELP);

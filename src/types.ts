@@ -36,7 +36,8 @@ export interface ContextFile {
     | "gemini"
     | "windsurf"
     | "cline"
-    | "opencode";
+    | "opencode"
+    | "memory";
   content: string;
   lines: string[];
 }

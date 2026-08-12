@@ -85,6 +85,18 @@ npx @alifurkangokce/driftlint --llm --llm-model claude-haiku-4-5   # budget opti
 
 Your key, your bill (default model `claude-opus-5`; capped at 10 files / 8 claims per file, token usage is printed). Findings are warnings marked *needs review* — the verifier is conservative: missing evidence is "unverifiable", never "contradicted". **Without `--llm`, driftlint never touches the network.**
 
+### Reviewed Memory (beta)
+
+Agents keep relearning the same repo facts, and pasting them into CLAUDE.md by hand doesn't scale to a team. Reviewed Memory closes the loop:
+
+```bash
+driftlint memory propose --text "Auth goes through the BFF." --evidence src/auth.ts:42   # the AGENT does this
+driftlint memory review    # the HUMAN approves/rejects, one entry at a time
+driftlint memory sync      # approved set → a marked block in CLAUDE.md / AGENTS.md / GEMINI.md
+```
+
+Why it works: the synced block lives in the files **every agent CLI already reads** (no hooks, no daemon), git distributes it via ordinary PRs, and driftlint scans `.agent-memory/` and the block itself — so when the code moves, the memory that references it gets flagged like any other drift. Claude Code users get a `/memory-propose` command with the plugin.
+
 ### Adopting on a legacy repo
 
 ```bash

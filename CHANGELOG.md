@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.5.0 — 2026-08-12
+
+Reviewed Memory (beta): agents propose, humans approve, git distributes, driftlint verifies.
+
+- `driftlint memory propose --text ... [--scope] [--evidence] [--source]` — agents record one verified repo fact per entry under `.agent-memory/proposals/`
+- `driftlint memory review` — interactive approve/reject (approve auto-syncs); `--yes` for bulk
+- `driftlint memory sync` — writes the approved set as a marked block into CLAUDE.md/AGENTS.md/GEMINI.md, idempotently — works in every agent CLI that reads those files, no hooks needed
+- `.agent-memory/` entries are scanned like any context file: memory that drifts from the code gets flagged
+- Claude Code plugin: new `/memory-propose` command
+
 ## 0.4.1 — 2026-08-12
 
 Precision round: every fix driven by a 160-finding hand-labeled study of 25 public repos (see docs/precision.md).

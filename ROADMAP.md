@@ -24,7 +24,7 @@ A linter's only capital is trust, so every release prioritizes precision before 
 - Suggested rewrites for stale paragraphs *(still open)*
 - Cross-file contradiction detection *(still open)*
 
-## v0.5 — Reviewed Memory
+## v0.5 — Reviewed Memory ✅ shipped in 0.5.0 (beta)
 
 - Agents *propose* knowledge at session end (`driftlint memory propose`)
 - Humans approve via `driftlint memory review` or a plain PR

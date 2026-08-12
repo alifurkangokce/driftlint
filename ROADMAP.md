@@ -18,11 +18,11 @@ A linter's only capital is trust, so every release prioritizes precision before 
 - Interactive `--fix` for did-you-mean findings
 - Wider discovery: GEMINI.md, `.opencode/`, `.windsurfrules`, `.clinerules`
 
-## v0.4 — optional LLM pass
+## v0.4 — optional LLM pass ✅ shipped in 0.4.0
 
 - `--llm`: verify narrative claims ("auth goes through the BFF") against the code with your own API key; zero behavior change without a key
-- Suggested rewrites for stale paragraphs
-- Cross-file contradiction detection
+- Suggested rewrites for stale paragraphs *(still open)*
+- Cross-file contradiction detection *(still open)*
 
 ## v0.5 — Reviewed Memory
 

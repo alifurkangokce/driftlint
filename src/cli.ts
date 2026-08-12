@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { applyBaseline, loadBaseline, scan, writeBaseline } from "./scan.js";
+import { applyBaseline, applyRuleOverrides, loadBaseline, loadConfig, scan, writeBaseline } from "./scan.js";
+import { createAnthropicComplete, DEFAULT_LLM_MODEL, runLlmPass } from "./llm.js";
 import { printJson, printReport } from "./report.js";
 import { toSarif } from "./sarif.js";
 import { applyFixes } from "./fix.js";
@@ -16,6 +17,10 @@ Options:
   --sarif              SARIF 2.1.0 output (pipe to a file, upload to GitHub code scanning)
   --fix                interactively apply safe fixes (single did-you-mean candidates);
                        --yes applies them all without asking
+  --llm                also verify narrative claims ("auth goes through the BFF") against
+                       the code, using YOUR Anthropic credentials (ANTHROPIC_API_KEY or an
+                       \`ant auth login\` profile) and the optional @anthropic-ai/sdk package
+  --llm-model <id>     model for --llm (default ${DEFAULT_LLM_MODEL}; claude-haiku-4-5 is the budget option)
   --no-fail            always exit 0, even with errors
   --skill-budget <n>   system-prompt char budget for skill descriptions (default 15000)
   --update-baseline    record current findings in .driftlint-baseline.json and exit;
@@ -43,6 +48,8 @@ interface Options {
   yes: boolean;
   fail: boolean;
   updateBaseline: boolean;
+  llm: boolean;
+  llmModel?: string;
   skillBudget?: number;
 }
 
@@ -55,6 +62,7 @@ function parseArgs(argv: string[]): Options | "help" | "version" {
     yes: false,
     fail: true,
     updateBaseline: false,
+    llm: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -66,6 +74,15 @@ function parseArgs(argv: string[]): Options | "help" | "version" {
     else if (a === "--yes") opts.yes = true;
     else if (a === "--no-fail") opts.fail = false;
     else if (a === "--update-baseline") opts.updateBaseline = true;
+    else if (a === "--llm") opts.llm = true;
+    else if (a === "--llm-model") {
+      const m = argv[++i];
+      if (!m || m.startsWith("-")) {
+        console.error("driftlint: --llm-model expects a model id");
+        process.exit(2);
+      }
+      opts.llmModel = m;
+    }
     else if (a === "--skill-budget") {
       const n = Number.parseInt(argv[++i] ?? "", 10);
       if (!Number.isFinite(n) || n <= 0) {
@@ -112,6 +129,22 @@ async function main(): Promise<void> {
   }
 
   let result = scan(root, { skillBudget: parsed.skillBudget });
+
+  if (parsed.llm) {
+    const model = parsed.llmModel ?? DEFAULT_LLM_MODEL;
+    const config = loadConfig(root);
+    try {
+      const complete = await createAnthropicComplete(model);
+      const pass = await runLlmPass(root, { complete, config });
+      result.findings.push(...applyRuleOverrides(pass.findings, config));
+      console.error(
+        `driftlint --llm: ${pass.claimsChecked} claims across ${pass.filesChecked} files, ${pass.findings.length} contradicted (${model}, ${pass.usage.inputTokens} in / ${pass.usage.outputTokens} out tokens)`,
+      );
+    } catch (e) {
+      console.error(`driftlint --llm: ${(e as Error).message}`);
+      process.exit(2);
+    }
+  }
 
   if (parsed.updateBaseline) {
     const p = writeBaseline(root, result.findings);

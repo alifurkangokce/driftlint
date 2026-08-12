@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 — 2026-08-12
+
+The LLM pass.
+
+- **`--llm`**: extract narrative claims ("auth goes through the BFF") from context files, grep the repo for evidence, and have Claude judge whether the code contradicts them. New `narrative-claim` warnings, marked *needs review*.
+- Uses **your** Anthropic credentials (`ANTHROPIC_API_KEY` or an `ant auth login` profile) and the official `@anthropic-ai/sdk` as an **optional peer dependency** — plain `npx driftlint` stays dependency-free and never touches the network.
+- `--llm-model` to pick the model (default `claude-opus-5`; `claude-haiku-4-5` as the budget option). Hard caps: 10 files, 8 claims/file; token usage printed after the pass.
+- Conservative verifier: absence of evidence is "unverifiable", never "contradicted". Refusals and unparseable responses skip the file instead of failing the run.
+
 ## 0.3.0 — 2026-08-12
 
 CI depth.

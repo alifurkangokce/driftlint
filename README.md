@@ -27,6 +27,7 @@ Agent knowledge decays like code documentation always has — except now the rea
 | `skill-budget` | Skill descriptions overflowing the ~15k-char system-prompt budget — skills past it are **silently invisible** to the agent |
 | `stale-knowledge` | Context files untouched for months while the code they describe churned heavily |
 | `foreign-context` | A file whose references mostly don't resolve — probably describes another repo; findings collapse into one warning instead of a flood |
+| `narrative-claim` | *(only with `--llm`)* Narrative claims ("auth goes through the BFF") that the code contradicts — verified with your own Anthropic API credentials |
 
 `dead-command` is workspace-aware: a script that exists in another monorepo package is reported as a *location* warning ("defined in `packages/client/package.json`"), not a dead command.
 
@@ -70,6 +71,19 @@ repos:
     hooks:
       - id: driftlint
 ```
+
+### Optional LLM pass
+
+Deterministic checks can't see narrative claims. `--llm` extracts them from your context files, greps the repo for evidence, and asks Claude whether the code contradicts them:
+
+```bash
+npm install @anthropic-ai/sdk        # optional peer dependency, only needed for --llm
+export ANTHROPIC_API_KEY=sk-ant-...  # or `ant auth login`
+npx @alifurkangokce/driftlint --llm
+npx @alifurkangokce/driftlint --llm --llm-model claude-haiku-4-5   # budget option
+```
+
+Your key, your bill (default model `claude-opus-5`; capped at 10 files / 8 claims per file, token usage is printed). Findings are warnings marked *needs review* — the verifier is conservative: missing evidence is "unverifiable", never "contradicted". **Without `--llm`, driftlint never touches the network.**
 
 ### Adopting on a legacy repo
 

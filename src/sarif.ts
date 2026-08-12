@@ -6,6 +6,7 @@ const RULE_DESCRIPTIONS: Record<Finding["rule"], string> = {
   "skill-budget": "Skill descriptions overflow the system-prompt budget",
   "stale-knowledge": "Context file untouched while the code it describes churned",
   "foreign-context": "Most path references do not resolve; file probably describes another repo",
+  "narrative-claim": "A narrative claim in the context file appears contradicted by the code (LLM-verified)",
 };
 
 const LEVEL: Record<Finding["severity"], "error" | "warning" | "note"> = {

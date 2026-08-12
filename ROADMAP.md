@@ -1,0 +1,40 @@
+# Roadmap
+
+A linter's only capital is trust, so every release prioritizes precision before coverage.
+
+## v0.2 — trust
+
+- Real test suite: per-rule fixtures + a regression test for every false-positive class found in the wild
+- Monorepo-aware `dead-command`: search all package.json files; downgrade to a warning with a location hint when the script lives in another workspace package
+- "Describes another repo" heuristic: when most path references in one file can't resolve, collapse findings into a single warning instead of flooding
+- Baseline mode (`--update-baseline`): adopt driftlint on a legacy repo and only fail CI on *new* drift
+- `.driftlintrc.json`: ignore globs, extra context-file paths, severity overrides
+- Measured precision published in the README
+
+## v0.3 — CI depth
+
+- SARIF output + GitHub code-scanning annotations from the action
+- pre-commit / husky hooks
+- Interactive `--fix` for did-you-mean findings
+- Wider discovery: GEMINI.md, `.opencode/`, `.windsurfrules`, `.clinerules`
+
+## v0.4 — optional LLM pass
+
+- `--llm`: verify narrative claims ("auth goes through the BFF") against the code with your own API key; zero behavior change without a key
+- Suggested rewrites for stale paragraphs
+- Cross-file contradiction detection
+
+## v0.5 — Reviewed Memory
+
+- Agents *propose* knowledge at session end (`driftlint memory propose`)
+- Humans approve via `driftlint memory review` or a plain PR
+- Approved knowledge is injected at session start — Claude Code, OpenCode, Codex, Cursor
+- driftlint continuously re-verifies approved knowledge, closing the loop
+
+## Non-goals
+
+General-purpose memory frameworks, runtime guardrails, GUIs, telemetry of any kind.
+
+---
+
+Found a false positive? That's the most valuable issue you can open — please include the context-file line and the actual repo layout.

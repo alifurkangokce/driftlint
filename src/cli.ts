@@ -3,6 +3,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import { applyBaseline, loadBaseline, scan, writeBaseline } from "./scan.js";
 import { printJson, printReport } from "./report.js";
+import { toSarif } from "./sarif.js";
+import { applyFixes } from "./fix.js";
 
 const HELP = `driftlint — finds the claims in your CLAUDE.md / AGENTS.md / skills that your code no longer supports.
 
@@ -11,6 +13,9 @@ Usage:
 
 Options:
   --json               machine-readable output
+  --sarif              SARIF 2.1.0 output (pipe to a file, upload to GitHub code scanning)
+  --fix                interactively apply safe fixes (single did-you-mean candidates);
+                       --yes applies them all without asking
   --no-fail            always exit 0, even with errors
   --skill-budget <n>   system-prompt char budget for skill descriptions (default 15000)
   --update-baseline    record current findings in .driftlint-baseline.json and exit;
@@ -33,18 +38,32 @@ Ignore a line with a "driftlint-ignore" comment on it or the line above.`;
 interface Options {
   root: string;
   json: boolean;
+  sarif: boolean;
+  fix: boolean;
+  yes: boolean;
   fail: boolean;
   updateBaseline: boolean;
   skillBudget?: number;
 }
 
 function parseArgs(argv: string[]): Options | "help" | "version" {
-  const opts: Options = { root: ".", json: false, fail: true, updateBaseline: false };
+  const opts: Options = {
+    root: ".",
+    json: false,
+    sarif: false,
+    fix: false,
+    yes: false,
+    fail: true,
+    updateBaseline: false,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--help" || a === "-h") return "help";
     if (a === "--version" || a === "-v") return "version";
     if (a === "--json") opts.json = true;
+    else if (a === "--sarif") opts.sarif = true;
+    else if (a === "--fix") opts.fix = true;
+    else if (a === "--yes") opts.yes = true;
     else if (a === "--no-fail") opts.fail = false;
     else if (a === "--update-baseline") opts.updateBaseline = true;
     else if (a === "--skill-budget") {
@@ -64,17 +83,21 @@ function parseArgs(argv: string[]): Options | "help" | "version" {
   return opts;
 }
 
-function main(): void {
+function readVersion(): string {
+  const pkg = JSON.parse(
+    fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+  ) as { version: string };
+  return pkg.version;
+}
+
+async function main(): Promise<void> {
   const parsed = parseArgs(process.argv.slice(2));
   if (parsed === "help") {
     console.log(HELP);
     return;
   }
   if (parsed === "version") {
-    const pkg = JSON.parse(
-      fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"),
-    ) as { version: string };
-    console.log(pkg.version);
+    console.log(readVersion());
     return;
   }
 
@@ -83,8 +106,12 @@ function main(): void {
     console.error(`driftlint: ${parsed.root} is not a directory`);
     process.exit(2);
   }
+  if (parsed.fix && (parsed.json || parsed.sarif)) {
+    console.error("driftlint: --fix cannot be combined with --json/--sarif");
+    process.exit(2);
+  }
 
-  const result = scan(root, { skillBudget: parsed.skillBudget });
+  let result = scan(root, { skillBudget: parsed.skillBudget });
 
   if (parsed.updateBaseline) {
     const p = writeBaseline(root, result.findings);
@@ -97,11 +124,24 @@ function main(): void {
   const baseline = loadBaseline(root);
   if (baseline) result.findings = applyBaseline(result.findings, baseline);
 
-  if (parsed.json) printJson(result);
-  else printReport(result);
+  if (parsed.fix) {
+    const { applied, skipped } = await applyFixes(root, result.findings, { yes: parsed.yes });
+    result = scan(root, { skillBudget: parsed.skillBudget });
+    if (baseline) result.findings = applyBaseline(result.findings, baseline);
+    printReport(result);
+    console.log(
+      `driftlint --fix: ${applied.length} applied, ${skipped.length} skipped (re-scan above is the current state)`,
+    );
+  } else if (parsed.sarif) {
+    console.log(JSON.stringify(toSarif(result, readVersion()), null, 2));
+  } else if (parsed.json) {
+    printJson(result);
+  } else {
+    printReport(result);
+  }
 
   const errors = result.findings.some((f) => f.severity === "error");
   process.exit(parsed.fail && errors ? 1 : 0);
 }
 
-main();
+void main();

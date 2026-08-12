@@ -35,7 +35,9 @@ Agent knowledge decays like code documentation always has — except now the rea
 ```bash
 npx @alifurkangokce/driftlint                 # scan the current repo
 npx @alifurkangokce/driftlint path/to/repo    # scan another repo
+npx @alifurkangokce/driftlint --fix           # interactively apply safe fixes (--yes: all)
 npx @alifurkangokce/driftlint --json          # machine-readable output (CI-friendly)
+npx @alifurkangokce/driftlint --sarif         # SARIF 2.1.0 for GitHub code scanning
 npx @alifurkangokce/driftlint --no-fail       # report but always exit 0
 ```
 
@@ -46,6 +48,8 @@ Exit code is `1` when errors are found, so it drops straight into CI. Or use the
 ```yaml
 # .github/workflows/driftlint.yml
 on: [pull_request]
+permissions:
+  security-events: write   # only needed when sarif-file is set
 jobs:
   driftlint:
     runs-on: ubuntu-latest
@@ -53,6 +57,18 @@ jobs:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }   # full history enables the staleness check
       - uses: alifurkangokce/driftlint@main
+        with:
+          sarif-file: driftlint.sarif   # optional: findings become PR annotations
+```
+
+Or as a [pre-commit](https://pre-commit.com) hook:
+
+```yaml
+repos:
+  - repo: https://github.com/alifurkangokce/driftlint
+    rev: v0.3.0
+    hooks:
+      - id: driftlint
 ```
 
 ### Adopting on a legacy repo
@@ -84,7 +100,7 @@ This mentions `hypothetical/example.ts` on purpose.
 
 ## Scanned files
 
-`CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md` (anywhere in the tree), `.claude/skills/*/SKILL.md`, `.claude/agents/*.md`, `.claude/commands/*.md`, `.cursor/rules/*`, `.github/copilot-instructions.md`.
+`CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md`, `GEMINI.md` (anywhere in the tree), `.claude/skills/*/SKILL.md`, `.claude/agents/*.md`, `.claude/commands/*.md`, `.cursor/rules/*`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules` (file or directory), `.opencode/{agent,command,knowledge}/**.md`.
 
 ## Claude Code plugin
 
@@ -97,10 +113,7 @@ driftlint also ships as a Claude Code plugin: a `/driftlint` command that runs t
 
 ## Roadmap
 
-- **Phase A (now):** deterministic drift detection — paths, commands, budgets, staleness.
-- **GitHub Action** and SARIF output for code-scanning annotations.
-- **Optional LLM pass:** verify narrative claims ("auth goes through the BFF") against the code, using your own API key.
-- **Phase B — Reviewed Memory:** agents *propose* knowledge at session end, humans approve via PR, git distributes it, and driftlint keeps it honest. Cross-CLI: Claude Code, OpenCode, Codex, Cursor.
+See [ROADMAP.md](ROADMAP.md) — next up: an **optional LLM pass** for narrative claims, then **Reviewed Memory**: agents *propose* knowledge at session end, humans approve via PR, git distributes it, and driftlint keeps it honest.
 
 ## License
 

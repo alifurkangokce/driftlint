@@ -1,0 +1,6 @@
+- id: driftlint
+  name: driftlint
+  description: Find the claims in your agent context files that your code no longer supports.
+  entry: driftlint
+  language: node
+  pass_filenames: false

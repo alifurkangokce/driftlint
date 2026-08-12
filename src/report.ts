@@ -25,7 +25,8 @@ export function printReport(result: ScanResult): void {
       const loc = f.line > 0 ? dim(`:${f.line}`) : "";
       const tag =
         f.severity === "error" ? red("✗") : f.severity === "warning" ? yellow("⚠") : dim("ℹ");
-      console.log(`  ${tag} ${dim(`[${f.rule}]`)}${loc} ${f.message}`);
+      const fixable = f.fix ? dim(" ✎ fixable") : "";
+      console.log(`  ${tag} ${dim(`[${f.rule}]`)}${loc} ${f.message}${fixable}`);
       if (f.hint) console.log(`      ${dim(`↳ ${f.hint}`)}`);
     }
   }

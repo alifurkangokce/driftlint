@@ -16,6 +16,10 @@ inputs:
     description: "Fail the job when errors are found"
     required: false
     default: "true"
+  sarif-file:
+    description: "Also write SARIF here and upload it to GitHub code scanning (requires 'security-events: write' permission)"
+    required: false
+    default: ""
 runs:
   using: "composite"
   steps:
@@ -27,3 +31,12 @@ runs:
           ARGS="$ARGS --no-fail"
         fi
         npx -y @alifurkangokce/driftlint@latest $ARGS
+    - name: Write SARIF
+      if: ${{ inputs.sarif-file != '' && (success() || failure()) }}
+      shell: bash
+      run: npx -y @alifurkangokce/driftlint@latest ${{ inputs.path }} --skill-budget ${{ inputs.skill-budget }} --sarif --no-fail > "${{ inputs.sarif-file }}"
+    - name: Upload SARIF to code scanning
+      if: ${{ inputs.sarif-file != '' && (success() || failure()) }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ inputs.sarif-file }}

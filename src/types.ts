@@ -9,12 +9,28 @@ export interface Finding {
   line: number;
   message: string;
   hint?: string;
+  /** Present when the finding has exactly one safe, mechanical fix. */
+  fix?: {
+    oldText: string;
+    newText: string;
+  };
 }
 
 export interface ContextFile {
   /** Path relative to the scanned root. */
   path: string;
-  kind: "claude-md" | "agents-md" | "skill" | "subagent" | "command" | "cursor-rule" | "copilot";
+  kind:
+    | "claude-md"
+    | "agents-md"
+    | "skill"
+    | "subagent"
+    | "command"
+    | "cursor-rule"
+    | "copilot"
+    | "gemini"
+    | "windsurf"
+    | "cline"
+    | "opencode";
   content: string;
   lines: string[];
 }

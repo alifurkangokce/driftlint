@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.3.0 — 2026-08-12
+
+CI depth.
+
+- **`--sarif`**: SARIF 2.1.0 output; the GitHub Action gained a `sarif-file` input that uploads to code scanning, so findings appear as PR annotations (needs `security-events: write`).
+- **`--fix`**: interactively apply safe fixes — single-candidate "did you mean" paths and closest-script renames. `--yes` applies all; non-TTY without `--yes` touches nothing. Fixable findings are marked `✎` in the report.
+- **pre-commit hook** (`.pre-commit-hooks.yaml`) for the pre-commit framework.
+- **Wider discovery**: `GEMINI.md`, `.windsurfrules`, `.clinerules` (file or directory), `.opencode/{agent,command,knowledge}/**.md`.
+
 ## 0.2.0 — 2026-08-11
 
 The trust release: precision before coverage.

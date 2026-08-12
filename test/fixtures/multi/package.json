@@ -1,0 +1,7 @@
+{
+  "name": "multi-fixture",
+  "private": true,
+  "scripts": {
+    "build": "echo build"
+  }
+}

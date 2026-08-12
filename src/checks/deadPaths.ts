@@ -74,6 +74,10 @@ export function checkDeadPaths(
     const hint = elsewhere.length
       ? `did you mean \`${elsewhere.slice(0, 3).join("\`, \`")}\`?`
       : undefined;
+    const single = elsewhere.length === 1 ? elsewhere[0] : undefined;
+    const fix = single
+      ? { oldText: ref.raw, newText: ref.raw.endsWith("/") ? `${single}/` : single }
+      : undefined;
     // a single bare dir like `gateway/` is weak evidence — could describe a
     // deploy layout or a subdir of something named in prose. Downgrade it.
     const weak = segments.length === 1 && ref.raw.endsWith("/");
@@ -84,6 +88,7 @@ export function checkDeadPaths(
       line: ref.line,
       message: `\`${ref.raw}\` does not exist.`,
       ...(hint ? { hint } : {}),
+      ...(fix ? { fix } : {}),
     });
   }
   return { findings, attempted: resolved + findings.length };

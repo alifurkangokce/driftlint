@@ -103,6 +103,9 @@ export function checkDeadCommands(
       line: ref.line,
       message: `${label} \`${ref.name}\` is not in ${where}.`,
       ...(close.length ? { hint: `closest: \`${close.join("`, `")}\`` } : {}),
+      ...(close.length === 1 && close[0]
+        ? { fix: { oldText: ref.name, newText: close[0] } }
+        : {}),
     });
   }
   return findings;

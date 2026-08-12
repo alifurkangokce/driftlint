@@ -12,6 +12,11 @@ function kindOf(rel: string): ContextFile["kind"] | null {
   if (/(^|\/)\.claude\/agents\/[^/]+\.md$/.test(rel)) return "subagent";
   if (/(^|\/)\.claude\/commands\/[^/]+\.md$/.test(rel)) return "command";
   if (/(^|\/)\.cursor\/rules\/[^/]+\.(md|mdc)$/.test(rel)) return "cursor-rule";
+  if (base === "GEMINI.md") return "gemini";
+  if (base === ".windsurfrules") return "windsurf";
+  if (base === ".clinerules") return "cline";
+  if (/(^|\/)\.clinerules\/[^/]+\.md$/.test(rel)) return "cline";
+  if (/(^|\/)\.opencode\/(agent|command|knowledge)\/.+\.md$/.test(rel)) return "opencode";
   return null;
 }
 

@@ -1,0 +1,7 @@
+{
+  "name": "web",
+  "private": true,
+  "scripts": {
+    "develop": "echo dev"
+  }
+}

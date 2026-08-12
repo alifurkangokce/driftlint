@@ -21,26 +21,34 @@ export function extractRefs(file: ContextFile): { paths: PathRef[]; commands: Co
     if (line.includes("driftlint-ignore") || prev.includes("driftlint-ignore")) continue;
 
     // --- commands ---
-    for (const m of line.matchAll(/\b(?:npm|pnpm|bun)\s+run\s+([A-Za-z0-9:_.-]+)/g)) {
+    // Only look inside code spans/fences — prose like "make informed decisions"
+    // or a mentioned script name in a sentence is not a command claim.
+    const codeText = inFence
+      ? line
+      : [...line.matchAll(/`([^`\n]+)`/g)].map((m) => m[1]).join("  ");
+    // `cd server && yarn develop` scopes the command to server/ — capture it
+    const cwdMatch = /\bcd\s+([A-Za-z0-9_./-]+)\s*(?:&&|;)/.exec(codeText);
+    const cwd = cwdMatch?.[1];
+    for (const m of codeText.matchAll(/\b(?:npm|pnpm|bun)\s+run\s+([A-Za-z0-9:_.-]+)/g)) {
       const name = m[1];
       if (name && !seenCmd.has(`npm:${name}:${i}`)) {
         seenCmd.add(`npm:${name}:${i}`);
-        commands.push({ kind: "npm-script", name, line: i + 1 });
+        commands.push({ kind: "npm-script", name, line: i + 1, ...(cwd ? { cwd } : {}) });
       }
     }
-    for (const m of line.matchAll(/\byarn\s+(?:run\s+)?([A-Za-z0-9:_.-]+)/g)) {
+    for (const m of codeText.matchAll(/\byarn\s+(?:run\s+)?([A-Za-z0-9:_.-]+)/g)) {
       const name = m[1];
       const builtins = new Set(["install", "add", "remove", "init", "dlx", "create", "up", "why", "info", "workspaces"]);
       if (name && !builtins.has(name) && !seenCmd.has(`npm:${name}:${i}`)) {
         seenCmd.add(`npm:${name}:${i}`);
-        commands.push({ kind: "npm-script", name, line: i + 1 });
+        commands.push({ kind: "npm-script", name, line: i + 1, ...(cwd ? { cwd } : {}) });
       }
     }
-    for (const m of line.matchAll(/\bmake\s+([A-Za-z0-9_.-]+)/g)) {
+    for (const m of codeText.matchAll(/\bmake\s+([A-Za-z0-9_.-]+)/g)) {
       const name = m[1];
       if (name && !name.startsWith("-") && !seenCmd.has(`make:${name}:${i}`)) {
         seenCmd.add(`make:${name}:${i}`);
-        commands.push({ kind: "make-target", name, line: i + 1 });
+        commands.push({ kind: "make-target", name, line: i + 1, ...(cwd ? { cwd } : {}) });
       }
     }
 
@@ -49,13 +57,21 @@ export function extractRefs(file: ContextFile): { paths: PathRef[]; commands: Co
     // entry, which we don't reconstruct — skip them to avoid false positives.
     if (/[│├└╰]|(^\s*(\|--|`--))/.test(line)) continue;
 
+    // "Example: src/foo.ts" / "(e.g. `config.ts`)" lines are illustrations, not claims
+    if (/^\s*[-*>#]*\s*\**example/i.test(line) || /\be\.g\.|\(e\.g/i.test(line)) continue;
+
     // Candidates come from inline code spans and, inside fences, whole-line tokens.
     const candidates: string[] = [];
     for (const m of line.matchAll(/`([^`\n]+)`/g)) {
       if (m[1]) candidates.push(m[1]);
     }
     if (inFence) {
-      for (const tok of line.split(/[\s"'()]+/)) candidates.push(tok);
+      for (const tok of line.split(/[\s"'()]+/)) {
+        // bare `dirname/` inside a fence is almost always an indented tree
+        // listing entry, relative to a parent line we don't reconstruct
+        if (/^[^/]+\/$/.test(tok)) continue;
+        candidates.push(tok);
+      }
     }
 
     for (const raw of candidates) {
@@ -104,6 +120,12 @@ function looksLikePath(s: string): boolean {
   if (WELL_KNOWN_TECH.has(s.toLowerCase())) return false;
   // *.local.* files are gitignored-by-convention — absence is not drift
   if (/\.local\.[A-Za-z0-9]+$/.test(s)) return false;
+  // Windows drive paths / backslash paths describe someone's machine, not the repo
+  if (/^[A-Za-z]:[\\/]/.test(s) || s.includes("\\")) return false;
+  // URI-scheme tokens (file:./db, sqlite://...) are config values, not path claims
+  if (/^[a-z][a-z0-9+.-]*:/.test(s)) return false;
+  // .env files are gitignored-by-convention
+  if (s === ".env" || s.endsWith("/.env") || /\.env\.[A-Za-z]+$/.test(s)) return false;
   // globs, placeholders, expressions, flags
   if (/[*?<>{}$()[\]|=]/.test(s)) return false;
   if (s.startsWith("-") || s.startsWith("#") || s.startsWith("@")) return false;

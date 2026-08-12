@@ -76,7 +76,13 @@ export function checkDeadCommands(
     if (!hasAny) continue; // nothing to verify against
 
     const definedIn = map.get(ref.name) ?? [];
-    const scope = scopeManifests(ref.kind === "npm-script" ? "package.json" : "Makefile");
+    const manifest = ref.kind === "npm-script" ? "package.json" : "Makefile";
+    const scope = scopeManifests(manifest);
+    if (ref.cwd) {
+      // the instruction already says where to run it — honor that directory
+      const cleaned = ref.cwd.replace(/^\.\//, "").replace(/\/$/, "");
+      scope.push(`${cleaned}/${manifest}`, path.posix.join(fileDir === "." ? "" : fileDir, cleaned, manifest));
+    }
     if (definedIn.some((p) => scope.includes(p))) continue; // defined where the file points
 
     const label = ref.kind === "npm-script" ? "script" : "make target";

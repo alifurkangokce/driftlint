@@ -50,6 +50,8 @@ export interface CommandRef {
   kind: "npm-script" | "make-target";
   name: string;
   line: number;
+  /** Working directory when the instruction says `cd <dir> && ...`. */
+  cwd?: string;
 }
 
 export interface RepoIndex {

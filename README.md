@@ -26,6 +26,9 @@ Agent knowledge decays like code documentation always has — except now the rea
 | `dead-command` | `npm run` scripts and `make` targets that were removed or renamed |
 | `skill-budget` | Skill descriptions overflowing the ~15k-char system-prompt budget — skills past it are **silently invisible** to the agent |
 | `stale-knowledge` | Context files untouched for months while the code they describe churned heavily |
+| `foreign-context` | A file whose references mostly don't resolve — probably describes another repo; findings collapse into one warning instead of a flood |
+
+`dead-command` is workspace-aware: a script that exists in another monorepo package is reported as a *location* warning ("defined in `packages/client/package.json`"), not a dead command.
 
 ## Usage
 
@@ -52,7 +55,27 @@ jobs:
       - uses: alifurkangokce/driftlint@main
 ```
 
-Suppress a false positive with a comment on the same line or the line above:
+### Adopting on a legacy repo
+
+```bash
+npx @alifurkangokce/driftlint --update-baseline   # record today's findings
+```
+
+This writes `.driftlint-baseline.json`; from then on only **new** drift is reported, so CI stays green while you pay down the backlog.
+
+### Config
+
+Optional `.driftlintrc.json` at the repo root:
+
+```json
+{
+  "skillBudget": 15000,
+  "ignore": ["docs/archive/**"],
+  "rules": { "dead-command": "off", "stale-knowledge": "info" }
+}
+```
+
+Suppress a single false positive with a comment on the same line or the line above:
 
 ```markdown
 <!-- driftlint-ignore -->

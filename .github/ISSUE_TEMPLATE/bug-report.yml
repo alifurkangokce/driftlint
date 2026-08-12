@@ -1,0 +1,25 @@
+name: Bug report
+description: Crashes, wrong exit codes, broken output — anything that isn't a false positive.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: Command + minimal repo layout if possible.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: driftlint version and OS
+      placeholder: "0.2.0, macOS 15 / node 22"
+    validations:
+      required: true

@@ -1,7 +1,7 @@
 export type Severity = "error" | "warning" | "info";
 
 export interface Finding {
-  rule: "dead-path" | "dead-command" | "skill-budget" | "stale-knowledge";
+  rule: "dead-path" | "dead-command" | "skill-budget" | "stale-knowledge" | "foreign-context";
   severity: Severity;
   /** Context file the claim lives in, relative to the scanned root. */
   file: string;

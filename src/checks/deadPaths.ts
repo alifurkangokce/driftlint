@@ -21,13 +21,20 @@ const COMMON_TOOL_FILES = new Set([
   ".env", ".gitignore", "Makefile", "Dockerfile",
 ]);
 
+export interface DeadPathResult {
+  findings: Finding[];
+  /** How many references were actually evaluated (resolved + flagged). */
+  attempted: number;
+}
+
 /** A path the context file claims exists, but the tree says otherwise. */
 export function checkDeadPaths(
   file: ContextFile,
   refs: PathRef[],
   index: RepoIndex,
-): Finding[] {
+): DeadPathResult {
   const findings: Finding[] = [];
+  let resolved = 0;
   const fileDir = path.dirname(file.path);
 
   for (const ref of refs) {
@@ -37,8 +44,10 @@ export function checkDeadPaths(
     // bare filenames: only meaningful if they exist nowhere in the tree at all
     if (!ref.raw.includes("/")) {
       if (COMMON_TOOL_FILES.has(ref.raw)) continue;
-      if (index.basenames.has(ref.raw)) continue;
-      if (existsAt(index.root, fileDir, ref.raw)) continue;
+      if (index.basenames.has(ref.raw) || existsAt(index.root, fileDir, ref.raw)) {
+        resolved++;
+        continue;
+      }
       findings.push({
         rule: "dead-path",
         severity: "error",
@@ -49,7 +58,10 @@ export function checkDeadPaths(
       continue;
     }
 
-    if (existsAt(index.root, fileDir, rel)) continue;
+    if (existsAt(index.root, fileDir, rel)) {
+      resolved++;
+      continue;
+    }
     // dotfile roots like .claude/... may legitimately describe user-global files
     if (rel.startsWith("~") || rel.startsWith("/")) continue;
     const segments = rel.replace(/^\.\//, "").split("/");
@@ -74,7 +86,7 @@ export function checkDeadPaths(
       ...(hint ? { hint } : {}),
     });
   }
-  return findings;
+  return { findings, attempted: resolved + findings.length };
 }
 
 function existsAt(root: string, fileDir: string, rel: string): boolean {

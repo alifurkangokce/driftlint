@@ -1,15 +1,8 @@
 #!/usr/bin/env node
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { buildIndex, walk } from "./fswalk.js";
-import { discoverContextFiles } from "./discover.js";
-import { extractRefs } from "./extract.js";
-import { checkDeadPaths } from "./checks/deadPaths.js";
-import { checkDeadCommands } from "./checks/deadCommands.js";
-import { checkSkillBudget } from "./checks/skillBudget.js";
-import { checkFreshness } from "./checks/freshness.js";
+import { applyBaseline, loadBaseline, scan, writeBaseline } from "./scan.js";
 import { printJson, printReport } from "./report.js";
-import type { Finding, ScanResult } from "./types.js";
 
 const HELP = `driftlint — finds the claims in your CLAUDE.md / AGENTS.md / skills that your code no longer supports.
 
@@ -20,14 +13,20 @@ Options:
   --json               machine-readable output
   --no-fail            always exit 0, even with errors
   --skill-budget <n>   system-prompt char budget for skill descriptions (default 15000)
+  --update-baseline    record current findings in .driftlint-baseline.json and exit;
+                       later runs only report findings NOT in the baseline
   --version            print version
   --help               this text
 
 Checks:
   dead-path        referenced files/dirs that no longer exist (with "did you mean" hints)
-  dead-command     npm scripts / make targets that were removed or renamed
+  dead-command     npm scripts / make targets that were removed (workspace-aware)
   skill-budget     skills whose descriptions overflow the system-prompt budget (silently invisible)
   stale-knowledge  context files untouched for months while the code they describe churned
+  foreign-context  a file whose references mostly don't resolve — probably describes another repo
+
+Config (.driftlintrc.json at the scanned root):
+  { "skillBudget": 15000, "ignore": ["docs/archive/**"], "rules": { "dead-command": "off" } }
 
 Ignore a line with a "driftlint-ignore" comment on it or the line above.`;
 
@@ -35,17 +34,19 @@ interface Options {
   root: string;
   json: boolean;
   fail: boolean;
-  skillBudget: number;
+  updateBaseline: boolean;
+  skillBudget?: number;
 }
 
 function parseArgs(argv: string[]): Options | "help" | "version" {
-  const opts: Options = { root: ".", json: false, fail: true, skillBudget: 15_000 };
+  const opts: Options = { root: ".", json: false, fail: true, updateBaseline: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--help" || a === "-h") return "help";
     if (a === "--version" || a === "-v") return "version";
     if (a === "--json") opts.json = true;
     else if (a === "--no-fail") opts.fail = false;
+    else if (a === "--update-baseline") opts.updateBaseline = true;
     else if (a === "--skill-budget") {
       const n = Number.parseInt(argv[++i] ?? "", 10);
       if (!Number.isFinite(n) || n <= 0) {
@@ -61,23 +62,6 @@ function parseArgs(argv: string[]): Options | "help" | "version" {
     }
   }
   return opts;
-}
-
-export function scan(root: string, skillBudget: number): ScanResult {
-  const entries = walk(root);
-  const index = buildIndex(root, entries);
-  const contextFiles = discoverContextFiles(root, entries);
-
-  const findings: Finding[] = [];
-  for (const file of contextFiles) {
-    const { paths, commands } = extractRefs(file);
-    findings.push(...checkDeadPaths(file, paths, index));
-    findings.push(...checkDeadCommands(root, file, commands));
-    findings.push(...checkFreshness(root, file, paths));
-  }
-  findings.push(...checkSkillBudget(contextFiles.filter((f) => f.kind === "skill"), skillBudget));
-
-  return { root, contextFiles: contextFiles.map((f) => f.path), findings };
 }
 
 function main(): void {
@@ -100,7 +84,19 @@ function main(): void {
     process.exit(2);
   }
 
-  const result = scan(root, parsed.skillBudget);
+  const result = scan(root, { skillBudget: parsed.skillBudget });
+
+  if (parsed.updateBaseline) {
+    const p = writeBaseline(root, result.findings);
+    console.log(
+      `driftlint: baseline written to ${path.relative(process.cwd(), p)} (${result.findings.length} findings recorded)`,
+    );
+    return;
+  }
+
+  const baseline = loadBaseline(root);
+  if (baseline) result.findings = applyBaseline(result.findings, baseline);
+
   if (parsed.json) printJson(result);
   else printReport(result);
 

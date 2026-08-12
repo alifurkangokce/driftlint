@@ -1,0 +1,7 @@
+{
+  "skillBudget": 200,
+  "ignore": ["ignored/**"],
+  "rules": {
+    "dead-command": "off"
+  }
+}

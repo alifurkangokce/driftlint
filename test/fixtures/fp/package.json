@@ -1,0 +1,7 @@
+{
+  "name": "fp-fixture",
+  "private": true,
+  "scripts": {
+    "build": "echo build"
+  }
+}

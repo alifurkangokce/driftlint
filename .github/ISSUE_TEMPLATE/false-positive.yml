@@ -1,0 +1,35 @@
+name: False positive
+description: driftlint flagged something that isn't drift — the most valuable report you can file.
+title: "[FP] "
+labels: ["false-positive"]
+body:
+  - type: textarea
+    id: finding
+    attributes:
+      label: The finding driftlint reported
+      description: Paste the finding line (or --json output) exactly.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: context-line
+    attributes:
+      label: The context-file line that triggered it
+      description: The line from your CLAUDE.md / AGENTS.md / SKILL.md.
+      render: markdown
+    validations:
+      required: true
+  - type: textarea
+    id: layout
+    attributes:
+      label: Why it's not drift
+      description: The actual repo layout / script location / reason the claim is still true.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: driftlint version
+      placeholder: npx @alifurkangokce/driftlint --version
+    validations:
+      required: true

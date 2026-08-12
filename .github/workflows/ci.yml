@@ -14,20 +14,6 @@ jobs:
         with:
           node-version: 22
       - run: npm ci
-      - run: npm run build
-      - name: fixture assertions
-        run: |
-          node dist/cli.js test/fixture --skill-budget 300 --json --no-fail > result.json
-          node -e "
-            const r = require('./result.json');
-            const rules = r.findings.map(f => f.rule).sort().join(',');
-            if (r.summary.errors !== 3 || r.summary.warnings !== 1) {
-              console.error('unexpected summary', r.summary); process.exit(1);
-            }
-            if (!rules.includes('dead-command') || !rules.includes('dead-path') || !rules.includes('skill-budget')) {
-              console.error('missing expected rules:', rules); process.exit(1);
-            }
-            console.log('fixture assertions ok:', r.summary);
-          "
+      - run: npm test
       - name: self-scan
         run: node dist/cli.js . --no-fail

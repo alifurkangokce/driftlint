@@ -1,0 +1,7 @@
+{
+  "name": "config-fixture",
+  "private": true,
+  "scripts": {
+    "build": "echo build"
+  }
+}

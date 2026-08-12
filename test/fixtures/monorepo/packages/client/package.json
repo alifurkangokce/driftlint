@@ -1,0 +1,7 @@
+{
+  "name": "client",
+  "private": true,
+  "scripts": {
+    "develop": "echo develop"
+  }
+}

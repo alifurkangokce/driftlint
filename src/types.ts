@@ -7,7 +7,8 @@ export interface Finding {
     | "skill-budget"
     | "stale-knowledge"
     | "foreign-context"
-    | "narrative-claim";
+    | "narrative-claim"
+    | "template-context";
   severity: Severity;
   /** Context file the claim lives in, relative to the scanned root. */
   file: string;

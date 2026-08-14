@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 — 2026-08-12
+
+Template-repo awareness (closes #5, the main limitation from docs/precision.md).
+
+- New `template-context` rule: skill/agent/command files with ≥2 unresolved references AND generator vocabulary ("scaffolds", "will create", "your project") collapse into one warning instead of a flood — root CLAUDE.md/AGENTS.md are never auto-suppressed (validated on 5 real repos: zero false collapses on application repos)
+- Explicit escapes: a `driftlint-template` comment in the file, or `"templates": ["glob"]` in `.driftlintrc.json` — both skip path/command checks with a single info note
+- 22-test suite
+
 ## 0.5.0 — 2026-08-12
 
 Reviewed Memory (beta): agents propose, humans approve, git distributes, driftlint verifies.

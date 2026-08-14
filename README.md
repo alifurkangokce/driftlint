@@ -113,9 +113,14 @@ Optional `.driftlintrc.json` at the repo root:
 {
   "skillBudget": 15000,
   "ignore": ["docs/archive/**"],
+  "templates": [".claude/skills/**"],
   "rules": { "dead-command": "off", "stale-knowledge": "info" }
 }
 ```
+
+### Template repos (scaffolds, methodology kits)
+
+If your repo *generates* other projects, its skills legitimately reference files that will exist in the **generated** project — driftlint would report those as dead. Three escapes: put a `driftlint-template` comment in the file, list globs under `"templates"` in `.driftlintrc.json` (both skip path/command checks with one info note), or let the auto-heuristic handle it — a skill/agent/command file with ≥2 unresolved references *and* generator vocabulary ("scaffolds", "will create", "your project") collapses into a single `template-context` warning. Root `CLAUDE.md`/`AGENTS.md` are **never** auto-suppressed: they describe *this* repo.
 
 Suppress a single false positive with a comment on the same line or the line above:
 

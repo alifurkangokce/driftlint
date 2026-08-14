@@ -9,7 +9,7 @@ A linter's only capital is trust, so every release prioritizes precision before 
 - "Describes another repo" heuristic: when most path references in one file can't resolve, collapse findings into a single warning instead of flooding
 - Baseline mode (`--update-baseline`): adopt driftlint on a legacy repo and only fail CI on *new* drift
 - `.driftlintrc.json`: ignore globs, extra context-file paths, severity overrides
-- Measured precision: 160-finding hand-labeled study done — see [docs/precision.md](docs/precision.md); headline number deferred until the template-repo heuristic (#5) lands
+- Measured precision: 160-finding hand-labeled study done — see [docs/precision.md](docs/precision.md); template-repo heuristic shipped in 0.6.0; headline number pending a re-run of the study
 
 ## v0.3 — CI depth ✅ shipped in 0.3.0
 

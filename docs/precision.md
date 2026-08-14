@@ -23,7 +23,7 @@ We do **not** publish a single headline precision number yet — it would be eit
 
 > On repos that describe **themselves**, driftlint's error-severity findings are predominantly real drift. On repos that describe **projects they generate**, driftlint currently over-reports; use `.driftlintrc.json` `ignore` globs or the `foreign-context` collapse until the planned template-repo heuristic lands.
 
-Tracking issue: [#5 — detect "describes a generated project" files](https://github.com/alifurkangokce/driftlint/issues/5). Once it lands, this study will be re-run and a headline number published.
+**Update (0.6.0):** the template-repo heuristic shipped — workflow files (skills/agents/commands) with unresolved references plus generator vocabulary now collapse into one `template-context` warning, and `driftlint-template` / `"templates"` globs give explicit control. Validation on 5 real repos showed zero false collapses on application repos; root CLAUDE.md/AGENTS.md are never auto-suppressed. The study will be re-run for a headline number.
 
 ## Reproducing
 

@@ -7,6 +7,7 @@ const RULE_DESCRIPTIONS: Record<Finding["rule"], string> = {
   "stale-knowledge": "Context file untouched while the code it describes churned",
   "foreign-context": "Most path references do not resolve; file probably describes another repo",
   "narrative-claim": "A narrative claim in the context file appears contradicted by the code (LLM-verified)",
+  "template-context": "File appears to describe a project this repo generates; path/command findings suppressed",
 };
 
 const LEVEL: Record<Finding["severity"], "error" | "warning" | "note"> = {

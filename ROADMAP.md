@@ -45,7 +45,7 @@ A linter's only capital is trust, so every release prioritizes precision before 
 - `missing-rationale`: rules without a stated reason are the ones nobody dares delete ([arXiv 2608.11095](https://arxiv.org/abs/2608.11095))
 - Deterministic 0–100 drift score + shields.io badge
 
-## v0.9 — integrations
+## v0.9 — integrations ✅ shipped in 0.9.0
 
 - reviewdog: native rdjsonl with one-click "Apply suggestion" payloads
 - `@driftlint/mcp`: `drift_scan` + `drift_check`, so agents verify context edits before writing them

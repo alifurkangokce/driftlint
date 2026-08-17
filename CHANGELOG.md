@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.0 — 2026-08-17
+
+The integrations release.
+
+- **`--rdjsonl`**: reviewdog RDFormat output where every did-you-mean fix becomes a **one-click "Apply suggestion"** on GitHub PR reviews (column-precise ranges). Recommended: `-filter-mode=nofilter` — drift findings live on lines the diff never touched.
+- **`@alifurkangokce/driftlint-mcp`** (new package under `mcp/`): driftlint as an MCP server. `drift_scan` (full report, optional PR-diff range) and `drift_check` — agents verify a path/script reference **before** writing it into CLAUDE.md. stdio, lint-only philosophy (ESLint MCP model), covered by a real stdio-handshake E2E test.
+- Library surface: the main package now ships `exports` + type declarations (`scan`, `diffScan`, `checkReference`, `toRdjsonl`, `toSarif`, `badgeJson`) for editors and integrations.
+- Reviewed Memory: memorywire governance-channel alignment documented.
+- 35-test suite.
+
 ## 0.8.0 — 2026-08-17
 
 Load budget & honesty: will this file actually reach the model, and can anyone ever prune it?

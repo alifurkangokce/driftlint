@@ -5,6 +5,7 @@ import { applyBaseline, applyRuleOverrides, loadBaseline, loadConfig, scan, writ
 import { createAnthropicComplete, DEFAULT_LLM_MODEL, runLlmPass } from "./llm.js";
 import { printJson, printReport } from "./report.js";
 import { toSarif } from "./sarif.js";
+import { toRdjsonl } from "./rdjsonl.js";
 import { diffScan } from "./diff.js";
 import { applyFixes } from "./fix.js";
 import { badgeJson } from "./badge.js";
@@ -20,6 +21,8 @@ Usage:
 Options:
   --json               machine-readable output
   --sarif              SARIF 2.1.0 output (pipe to a file, upload to GitHub code scanning)
+  --rdjsonl            reviewdog RDFormat output with one-click Apply-suggestion payloads:
+                       driftlint --rdjsonl | reviewdog -f=rdjsonl -reporter=github-pr-review -filter-mode=nofilter
   --fix                interactively apply safe fixes (single did-you-mean candidates);
                        --yes applies them all without asking
   --llm                also verify narrative claims ("auth goes through the BFF") against
@@ -58,6 +61,7 @@ interface Options {
   root: string;
   json: boolean;
   sarif: boolean;
+  rdjsonl: boolean;
   fix: boolean;
   yes: boolean;
   fail: boolean;
@@ -74,6 +78,7 @@ function parseArgs(argv: string[]): Options | "help" | "version" {
     root: ".",
     json: false,
     sarif: false,
+    rdjsonl: false,
     fix: false,
     yes: false,
     fail: true,
@@ -86,6 +91,7 @@ function parseArgs(argv: string[]): Options | "help" | "version" {
     if (a === "--version" || a === "-v") return "version";
     if (a === "--json") opts.json = true;
     else if (a === "--sarif") opts.sarif = true;
+    else if (a === "--rdjsonl") opts.rdjsonl = true;
     else if (a === "--fix") opts.fix = true;
     else if (a === "--yes") opts.yes = true;
     else if (a === "--no-fail") opts.fail = false;
@@ -155,8 +161,8 @@ async function main(): Promise<void> {
     console.error(`driftlint: ${parsed.root} is not a directory`);
     process.exit(2);
   }
-  if (parsed.fix && (parsed.json || parsed.sarif)) {
-    console.error("driftlint: --fix cannot be combined with --json/--sarif");
+  if (parsed.fix && (parsed.json || parsed.sarif || parsed.rdjsonl)) {
+    console.error("driftlint: --fix cannot be combined with --json/--sarif/--rdjsonl");
     process.exit(2);
   }
 
@@ -225,6 +231,9 @@ async function main(): Promise<void> {
     );
   } else if (parsed.sarif) {
     console.log(JSON.stringify(toSarif(result, readVersion()), null, 2));
+  } else if (parsed.rdjsonl) {
+    const out = toRdjsonl(result);
+    if (out) console.log(out);
   } else if (parsed.json) {
     printJson(result);
   } else {

@@ -1,6 +1,6 @@
 {
   "name": "@alifurkangokce/driftlint",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Finds the claims in your CLAUDE.md / AGENTS.md / skills that your code no longer supports.",
   "type": "module",
   "bin": {
@@ -53,5 +53,13 @@
     "@anthropic-ai/sdk": "^0.100.0",
     "@types/node": "^20.14.0",
     "typescript": "^5.5.0"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   }
 }

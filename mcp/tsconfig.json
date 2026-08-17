@@ -6,13 +6,10 @@
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
-    "noUncheckedIndexedAccess": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "declaration": true,
+    "declaration": false,
     "sourceMap": false
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"]
 }

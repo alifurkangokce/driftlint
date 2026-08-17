@@ -30,7 +30,7 @@ driftlint memory review    # the HUMAN approves/rejects, one entry at a time
 driftlint memory sync      # approved set → a marked block in CLAUDE.md / AGENTS.md / GEMINI.md
 ```
 
-Why it works: the synced block lives in the files **every agent CLI already reads** (no hooks, no daemon), git distributes it via ordinary PRs, and driftlint scans `.agent-memory/` and the block itself — so when the code moves, the memory that references it gets flagged like any other drift. Claude Code users get a `/memory-propose` command with the plugin.
+Why it works: the synced block lives in the files **every agent CLI already reads** (no hooks, no daemon), git distributes it via ordinary PRs, and driftlint scans `.agent-memory/` and the block itself — so when the code moves, the memory that references it gets flagged like any other drift. Claude Code users get a `/memory-propose` command with the plugin. The propose → human-review → commit flow aligns with the governance channel of the [memorywire](https://arxiv.org/pdf/2606.01138) vendor-neutral memory wire format.
 
 ## What it checks
 
@@ -105,6 +105,22 @@ npx @alifurkangokce/driftlint --llm --llm-model claude-haiku-4-5   # budget opti
 ```
 
 Your key, your bill (default model `claude-opus-5`; capped at 10 files / 8 claims per file, token usage is printed). Findings are warnings marked *needs review* — the verifier is conservative: missing evidence is "unverifiable", never "contradicted". **Without `--llm`, driftlint never touches the network.**
+
+### reviewdog: one-click "Apply suggestion" on PRs
+
+```yaml
+      - run: npx -y @alifurkangokce/driftlint --rdjsonl --no-fail | reviewdog -f=rdjsonl -reporter=github-pr-review -filter-mode=nofilter
+```
+
+`--rdjsonl` emits reviewdog RDFormat where every did-you-mean fix becomes a committable GitHub suggestion. `-filter-mode=nofilter` matters: drift findings live on lines the diff never touched.
+
+### MCP server: agents lint their own context
+
+```bash
+claude mcp add driftlint -- npx -y @alifurkangokce/driftlint-mcp
+```
+
+Two tools from [`@alifurkangokce/driftlint-mcp`](mcp/): `drift_scan` (full report, optional `diff_range`) and `drift_check` — an agent about to edit CLAUDE.md verifies the reference **before** writing it, so it never writes a dead one.
 
 ### Freshness badge
 

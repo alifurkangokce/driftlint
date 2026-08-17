@@ -16,6 +16,10 @@ inputs:
     description: "Fail the job when errors are found"
     required: false
     default: "true"
+  diff:
+    description: "On pull_request events, report only drift THIS PR caused (uses the PR base as baseline)"
+    required: false
+    default: "false"
   sarif-file:
     description: "Also write SARIF here and upload it to GitHub code scanning (requires 'security-events: write' permission)"
     required: false
@@ -29,6 +33,10 @@ runs:
         ARGS="${{ inputs.path }} --skill-budget ${{ inputs.skill-budget }}"
         if [ "${{ inputs.fail }}" != "true" ]; then
           ARGS="$ARGS --no-fail"
+        fi
+        if [ "${{ inputs.diff }}" = "true" ] && [ -n "$GITHUB_BASE_REF" ]; then
+          git fetch --no-tags --depth=50 origin "$GITHUB_BASE_REF" || true
+          ARGS="$ARGS --diff origin/$GITHUB_BASE_REF...HEAD"
         fi
         npx -y @alifurkangokce/driftlint@latest $ARGS
     - name: Write SARIF

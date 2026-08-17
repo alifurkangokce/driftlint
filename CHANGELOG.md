@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0 — 2026-08-14
+
+PR-diff mode: only the drift THIS change caused.
+
+- **`--diff [range]`** (default `origin/main...HEAD`): scans the merge-base in a temporary git worktree, compares findings by stable fingerprint, and reports only what's new — pre-existing drift stays out of your PR. Deliberately a finding-level baseline, **not** a line filter: the headline case ("this PR renamed a file; CLAUDE.md still references it") lives on lines the diff never touched.
+- **Rename/delete attribution**: new dead-path findings are cross-referenced with `git diff --name-status -M` — a rename produces *"this change renames `src/auth.ts` → `src/authn.ts`…"* with the fix derived from the rename target; a deletion says so explicitly.
+- GitHub Action: new `diff: "true"` input auto-derives the range from the PR base branch.
+- README repositioned: Reviewed Memory leads; new comparison matrix vs agnix/ctxlint (complements, not rivals); research links (ETH Zurich context-file evaluation, "Why Does CLAUDE.md Keep Growing?").
+- 26-test suite.
+
 ## 0.6.0 — 2026-08-12
 
 Template-repo awareness (closes #5, the main limitation from docs/precision.md).

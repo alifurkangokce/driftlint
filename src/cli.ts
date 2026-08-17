@@ -5,6 +5,7 @@ import { applyBaseline, applyRuleOverrides, loadBaseline, loadConfig, scan, writ
 import { createAnthropicComplete, DEFAULT_LLM_MODEL, runLlmPass } from "./llm.js";
 import { printJson, printReport } from "./report.js";
 import { toSarif } from "./sarif.js";
+import { diffScan } from "./diff.js";
 import { applyFixes } from "./fix.js";
 
 const HELP = `driftlint — finds the claims in your CLAUDE.md / AGENTS.md / skills that your code no longer supports.
@@ -24,6 +25,9 @@ Options:
                        the code, using YOUR Anthropic credentials (ANTHROPIC_API_KEY or an
                        \`ant auth login\` profile) and the optional @anthropic-ai/sdk package
   --llm-model <id>     model for --llm (default ${DEFAULT_LLM_MODEL}; claude-haiku-4-5 is the budget option)
+  --diff [range]       report only drift THIS change caused: scans the merge-base in a
+                       temp worktree, diffs findings, and attributes renames/deletes
+                       (default range origin/main...HEAD)
   --no-fail            always exit 0, even with errors
   --skill-budget <n>   system-prompt char budget for skill descriptions (default 15000)
   --update-baseline    record current findings in .driftlint-baseline.json and exit;
@@ -51,6 +55,7 @@ interface Options {
   yes: boolean;
   fail: boolean;
   updateBaseline: boolean;
+  diff?: string;
   llm: boolean;
   llmModel?: string;
   skillBudget?: number;
@@ -77,6 +82,10 @@ function parseArgs(argv: string[]): Options | "help" | "version" {
     else if (a === "--yes") opts.yes = true;
     else if (a === "--no-fail") opts.fail = false;
     else if (a === "--update-baseline") opts.updateBaseline = true;
+    else if (a === "--diff") {
+      const next = argv[i + 1];
+      opts.diff = next && !next.startsWith("-") ? (i++, next) : "origin/main...HEAD";
+    }
     else if (a === "--llm") opts.llm = true;
     else if (a === "--llm-model") {
       const m = argv[++i];
@@ -135,7 +144,28 @@ async function main(): Promise<void> {
     process.exit(2);
   }
 
-  let result = scan(root, { skillBudget: parsed.skillBudget });
+  if (parsed.diff && parsed.updateBaseline) {
+    console.error("driftlint: --diff and --update-baseline cannot be combined");
+    process.exit(2);
+  }
+
+  let result;
+  if (parsed.diff) {
+    try {
+      const d = diffScan(root, parsed.diff, { skillBudget: parsed.skillBudget });
+      console.error(
+        `driftlint --diff: baseline ${d.baselineRef.slice(0, 10)} — ${d.findings.length} new finding${d.findings.length === 1 ? "" : "s"}, ${d.suppressed} pre-existing hidden`,
+      );
+      result = d;
+    } catch (e) {
+      console.error(
+        `driftlint --diff: could not resolve "${parsed.diff}" (${(e as Error).message.split("\n")[0]}). Fetch the base branch (git fetch origin main) or pass an explicit range, e.g. --diff main...HEAD`,
+      );
+      process.exit(2);
+    }
+  } else {
+    result = scan(root, { skillBudget: parsed.skillBudget });
+  }
 
   if (parsed.llm) {
     const model = parsed.llmModel ?? DEFAULT_LLM_MODEL;

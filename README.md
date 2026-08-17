@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/%40alifurkangokce%2Fdriftlint)](https://www.npmjs.com/package/@alifurkangokce/driftlint) [![ci](https://github.com/alifurkangokce/driftlint/actions/workflows/ci.yml/badge.svg)](https://github.com/alifurkangokce/driftlint/actions/workflows/ci.yml) [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Your CLAUDE.md is lying to your agent.** driftlint finds the claims in your agent context files — `CLAUDE.md`, `AGENTS.md`, skills, subagents, cursor rules — that your code no longer supports.
+**Your CLAUDE.md is lying to your agent.** driftlint keeps agent context files true, two ways: a **drift linter** that finds the claims in `CLAUDE.md`, `AGENTS.md`, skills, subagents and cursor rules that your code no longer supports — and **Reviewed Memory**, the missing approval layer between what your agents learn and what your team ships into CLAUDE.md.
 
 ```bash
 npx @alifurkangokce/driftlint
@@ -18,6 +18,20 @@ Coding agents trust context files completely. But code moves and context files d
 
 Agent knowledge decays like code documentation always has — except now the reader can't tell something is off. It just follows the instructions.
 
+The research backs this up: an [ETH Zurich evaluation](https://arxiv.org/abs/2601.20404) measured that auto-generated context files *reduce* agent success while minimal human-written ones help — so the winning move is keeping the human-written file true, not generating a new one. And a 2026 study of 247k instruction lifetimes (["Why Does CLAUDE.md Keep Growing?"](https://arxiv.org/abs/2608.11095)) found context files gain ~5 instructions per commit and almost never shrink, because once a rule's rationale is lost nobody dares delete it — which is why every Reviewed Memory entry carries its evidence and provenance.
+
+## Reviewed Memory (beta)
+
+Agents keep relearning the same repo facts, and pasting them into CLAUDE.md by hand doesn't scale to a team. Reviewed Memory closes the loop:
+
+```bash
+driftlint memory propose --text "Auth goes through the BFF." --evidence src/auth.ts:42   # the AGENT does this
+driftlint memory review    # the HUMAN approves/rejects, one entry at a time
+driftlint memory sync      # approved set → a marked block in CLAUDE.md / AGENTS.md / GEMINI.md
+```
+
+Why it works: the synced block lives in the files **every agent CLI already reads** (no hooks, no daemon), git distributes it via ordinary PRs, and driftlint scans `.agent-memory/` and the block itself — so when the code moves, the memory that references it gets flagged like any other drift. Claude Code users get a `/memory-propose` command with the plugin.
+
 ## What it checks
 
 | Rule | What it catches |
@@ -28,6 +42,7 @@ Agent knowledge decays like code documentation always has — except now the rea
 | `stale-knowledge` | Context files untouched for months while the code they describe churned heavily |
 | `foreign-context` | A file whose references mostly don't resolve — probably describes another repo; findings collapse into one warning instead of a flood |
 | `narrative-claim` | *(only with `--llm`)* Narrative claims ("auth goes through the BFF") that the code contradicts — verified with your own Anthropic API credentials |
+| `template-context` | Workflow files that describe a project this repo *generates* — collapsed into one warning instead of a flood |
 
 `dead-command` is workspace-aware: a script that exists in another monorepo package is reported as a *location* warning ("defined in `packages/client/package.json`"), not a dead command.
 
@@ -40,7 +55,10 @@ npx @alifurkangokce/driftlint --fix           # interactively apply safe fixes (
 npx @alifurkangokce/driftlint --json          # machine-readable output (CI-friendly)
 npx @alifurkangokce/driftlint --sarif         # SARIF 2.1.0 for GitHub code scanning
 npx @alifurkangokce/driftlint --no-fail       # report but always exit 0
+npx @alifurkangokce/driftlint --diff          # only drift THIS change caused (vs origin/main)
 ```
+
+`--diff` is what you want on pull requests: it scans the merge-base in a temporary worktree, reports only findings that are **new**, and attributes them to the change — *"this PR renames `src/auth.ts` → `src/authn.ts`; CLAUDE.md still references the old path"* — with the fix derived from the rename. Pre-existing drift stays out of your PR.
 
 Installed globally (`npm i -g @alifurkangokce/driftlint`) the command is just `driftlint`.
 
@@ -59,6 +77,7 @@ jobs:
         with: { fetch-depth: 0 }   # full history enables the staleness check
       - uses: alifurkangokce/driftlint@main
         with:
+          diff: "true"                  # PRs: only report drift this PR caused
           sarif-file: driftlint.sarif   # optional: findings become PR annotations
 ```
 
@@ -67,7 +86,7 @@ Or as a [pre-commit](https://pre-commit.com) hook:
 ```yaml
 repos:
   - repo: https://github.com/alifurkangokce/driftlint
-    rev: v0.3.0
+    rev: v0.7.0
     hooks:
       - id: driftlint
 ```
@@ -84,18 +103,6 @@ npx @alifurkangokce/driftlint --llm --llm-model claude-haiku-4-5   # budget opti
 ```
 
 Your key, your bill (default model `claude-opus-5`; capped at 10 files / 8 claims per file, token usage is printed). Findings are warnings marked *needs review* — the verifier is conservative: missing evidence is "unverifiable", never "contradicted". **Without `--llm`, driftlint never touches the network.**
-
-### Reviewed Memory (beta)
-
-Agents keep relearning the same repo facts, and pasting them into CLAUDE.md by hand doesn't scale to a team. Reviewed Memory closes the loop:
-
-```bash
-driftlint memory propose --text "Auth goes through the BFF." --evidence src/auth.ts:42   # the AGENT does this
-driftlint memory review    # the HUMAN approves/rejects, one entry at a time
-driftlint memory sync      # approved set → a marked block in CLAUDE.md / AGENTS.md / GEMINI.md
-```
-
-Why it works: the synced block lives in the files **every agent CLI already reads** (no hooks, no daemon), git distributes it via ordinary PRs, and driftlint scans `.agent-memory/` and the block itself — so when the code moves, the memory that references it gets flagged like any other drift. Claude Code users get a `/memory-propose` command with the plugin.
 
 ### Adopting on a legacy repo
 
@@ -141,6 +148,18 @@ driftlint also ships as a Claude Code plugin: a `/driftlint` command that runs t
 /plugin marketplace add alifurkangokce/driftlint
 /plugin install driftlint@driftlint
 ```
+
+## How driftlint compares
+
+| | **driftlint** | agnix | ctxlint / agents-lint | claude-mem etc. |
+|---|---|---|---|---|
+| Checks context files against the **actual codebase** (dead paths, dead commands, staleness) | ✅ | ❌ structural rules only | ✅ | ❌ |
+| PR-first: baseline mode, SARIF annotations, workspace-aware commands | ✅ | partial | partial | ❌ |
+| Template-repo awareness (scaffold kits don't drown you in noise) | ✅ | ❌ | ❌ | ❌ |
+| **Reviewed team memory** (agent proposes → human approves → synced & re-verified) | ✅ | ❌ | ❌ | ❌ auto-capture, no review |
+| Structural/spec rules, LSP, IDE plugins | ❌ by design | ✅ 448 rules | partial | ❌ |
+
+driftlint and [agnix](https://github.com/agent-sh/agnix) are complements, not rivals — agnix checks that your context files are *well-formed*; driftlint checks that they're *still true*. Run both, like eslint and tsc.
 
 ## Roadmap
 

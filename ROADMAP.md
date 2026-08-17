@@ -31,6 +31,30 @@ A linter's only capital is trust, so every release prioritizes precision before 
 - Approved knowledge is injected at session start — Claude Code, OpenCode, Codex, Cursor
 - driftlint continuously re-verifies approved knowledge, closing the loop
 
+## v0.6 — template-repo awareness ✅ shipped in 0.6.0
+
+- `template-context` rule, `driftlint-template` marker, `templates` config globs — closes the main precision-study limitation
+
+## v0.7 — PR-diff mode ✅ shipped in 0.7.0
+
+- `driftlint --diff`: report only drift *this change* caused — two-scan finding-level baseline (not a line filter), with rename attribution ("this PR renamed `src/auth.ts` → `src/authn.ts`; CLAUDE.md still references the old path") and perfect fixes derived from the rename
+
+## v0.8 — load budget & honesty
+
+- `load-budget` rules: will this file actually reach the model? (AGENTS.md 32KB truncation, MEMORY.md overflow, instruction-count warnings, skill budget)
+- `missing-rationale`: rules without a stated reason are the ones nobody dares delete ([arXiv 2608.11095](https://arxiv.org/abs/2608.11095))
+- Deterministic 0–100 drift score + shields.io badge
+
+## v0.9 — integrations
+
+- reviewdog: native rdjsonl with one-click "Apply suggestion" payloads
+- `@driftlint/mcp`: `drift_scan` + `drift_check`, so agents verify context edits before writing them
+- memorywire compatibility statement for Reviewed Memory
+
+## Later, on demand
+
+- VS Code extension (in-process library, markdownlint model) · sandboxed dry-run of documented commands · org-wide scanning
+
 ## Non-goals
 
 General-purpose memory frameworks, runtime guardrails, GUIs, telemetry of any kind.

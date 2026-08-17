@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.0 — 2026-08-17
+
+Load budget & honesty: will this file actually reach the model, and can anyone ever prune it?
+
+- **`load-budget`**: AGENTS.md past Codex CLI's 32 KB silent-truncation limit is a warning (the tail never reaches the model); files past ~150 instruction-like lines get an adherence info. Nobody else answers "will it actually load?".
+- **`missing-rationale`**: directive walls (never/always/must) where ≥80% carry no stated reason collapse into one info — rules whose rationale is lost are the ones nobody dares delete (arXiv 2608.11095). Reviewed Memory entries carry evidence by design.
+- **Context-freshness score**: deterministic 0-100 (share of path references that resolve; template/foreign files excluded), shown in the report tail and in `--json` stats. **`--badge-json <path>`** writes shields.io endpoint JSON; the Action gained a `badge-json` input — pair with dynamic-badges-action for a README badge.
+- 32-test suite.
+
 ## 0.7.0 — 2026-08-14
 
 PR-diff mode: only the drift THIS change caused.

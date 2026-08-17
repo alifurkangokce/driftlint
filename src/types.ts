@@ -8,7 +8,9 @@ export interface Finding {
     | "stale-knowledge"
     | "foreign-context"
     | "narrative-claim"
-    | "template-context";
+    | "template-context"
+    | "load-budget"
+    | "missing-rationale";
   severity: Severity;
   /** Context file the claim lives in, relative to the scanned root. */
   file: string;
@@ -66,4 +68,12 @@ export interface ScanResult {
   root: string;
   contextFiles: string[];
   findings: Finding[];
+  /** Reference-health stats behind the 0-100 freshness score. */
+  stats: {
+    refsChecked: number;
+    refsBroken: number;
+    /** 100 = every checked path reference resolves. Errors only; collapsed
+     *  template/foreign files are excluded so they can't skew the score. */
+    score: number;
+  };
 }

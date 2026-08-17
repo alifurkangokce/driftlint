@@ -39,7 +39,7 @@ A linter's only capital is trust, so every release prioritizes precision before 
 
 - `driftlint --diff`: report only drift *this change* caused — two-scan finding-level baseline (not a line filter), with rename attribution ("this PR renamed `src/auth.ts` → `src/authn.ts`; CLAUDE.md still references the old path") and perfect fixes derived from the rename
 
-## v0.8 — load budget & honesty
+## v0.8 — load budget & honesty ✅ shipped in 0.8.0
 
 - `load-budget` rules: will this file actually reach the model? (AGENTS.md 32KB truncation, MEMORY.md overflow, instruction-count warnings, skill budget)
 - `missing-rationale`: rules without a stated reason are the ones nobody dares delete ([arXiv 2608.11095](https://arxiv.org/abs/2608.11095))

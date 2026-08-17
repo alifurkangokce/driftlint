@@ -43,6 +43,8 @@ Why it works: the synced block lives in the files **every agent CLI already read
 | `foreign-context` | A file whose references mostly don't resolve — probably describes another repo; findings collapse into one warning instead of a flood |
 | `narrative-claim` | *(only with `--llm`)* Narrative claims ("auth goes through the BFF") that the code contradicts — verified with your own Anthropic API credentials |
 | `template-context` | Workflow files that describe a project this repo *generates* — collapsed into one warning instead of a flood |
+| `load-budget` | Content that silently never reaches the model: AGENTS.md past Codex's 32 KB truncation limit, files past the ~150-instruction adherence ceiling |
+| `missing-rationale` | Directive walls (never/always/must) with no stated reason — [the rules nobody dares delete](https://arxiv.org/abs/2608.11095) |
 
 `dead-command` is workspace-aware: a script that exists in another monorepo package is reported as a *location* warning ("defined in `packages/client/package.json`"), not a dead command.
 
@@ -103,6 +105,25 @@ npx @alifurkangokce/driftlint --llm --llm-model claude-haiku-4-5   # budget opti
 ```
 
 Your key, your bill (default model `claude-opus-5`; capped at 10 files / 8 claims per file, token usage is printed). Findings are warnings marked *needs review* — the verifier is conservative: missing evidence is "unverifiable", never "contradicted". **Without `--llm`, driftlint never touches the network.**
+
+### Freshness badge
+
+Every scan computes a deterministic **context-freshness score** (the share of path references that resolve; collapsed template/foreign files excluded). Put it in your README:
+
+```yaml
+      - uses: alifurkangokce/driftlint@main
+        with: { badge-json: badge.json, fail: "false" }
+      - uses: Schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: <your-gist-id>
+          filename: driftlint.json
+          contentFile: badge.json
+```
+
+```markdown
+![context freshness](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/<user>/<gist-id>/raw/driftlint.json)
+```
 
 ### Adopting on a legacy repo
 

@@ -7,6 +7,7 @@ import { printJson, printReport } from "./report.js";
 import { toSarif } from "./sarif.js";
 import { diffScan } from "./diff.js";
 import { applyFixes } from "./fix.js";
+import { badgeJson } from "./badge.js";
 
 const HELP = `driftlint — finds the claims in your CLAUDE.md / AGENTS.md / skills that your code no longer supports.
 
@@ -29,6 +30,8 @@ Options:
                        temp worktree, diffs findings, and attributes renames/deletes
                        (default range origin/main...HEAD)
   --no-fail            always exit 0, even with errors
+  --badge-json <path>  also write a shields.io endpoint-badge JSON with the 0-100
+                       context-freshness score (share of path references that resolve)
   --skill-budget <n>   system-prompt char budget for skill descriptions (default 15000)
   --update-baseline    record current findings in .driftlint-baseline.json and exit;
                        later runs only report findings NOT in the baseline
@@ -36,11 +39,15 @@ Options:
   --help               this text
 
 Checks:
-  dead-path        referenced files/dirs that no longer exist (with "did you mean" hints)
-  dead-command     npm scripts / make targets that were removed (workspace-aware)
-  skill-budget     skills whose descriptions overflow the system-prompt budget (silently invisible)
-  stale-knowledge  context files untouched for months while the code they describe churned
-  foreign-context  a file whose references mostly don't resolve — probably describes another repo
+  dead-path          referenced files/dirs that no longer exist (with "did you mean" hints)
+  dead-command       npm scripts / make targets that were removed (workspace-aware)
+  skill-budget       skills whose descriptions overflow the system-prompt budget (silently invisible)
+  stale-knowledge    context files untouched for months while the code they describe churned
+  foreign-context    a file whose references mostly don't resolve — probably describes another repo
+  template-context   workflow files that describe a project this repo GENERATES (collapsed)
+  load-budget        content past a harness limit (AGENTS.md 32KB, ~150-instruction adherence)
+  missing-rationale  strong directives with no stated reason — the rules nobody dares delete
+  narrative-claim    (--llm only) narrative claims the code contradicts
 
 Config (.driftlintrc.json at the scanned root):
   { "skillBudget": 15000, "ignore": ["docs/archive/**"], "rules": { "dead-command": "off" } }
@@ -56,6 +63,7 @@ interface Options {
   fail: boolean;
   updateBaseline: boolean;
   diff?: string;
+  badgeJsonPath?: string;
   llm: boolean;
   llmModel?: string;
   skillBudget?: number;
@@ -85,6 +93,14 @@ function parseArgs(argv: string[]): Options | "help" | "version" {
     else if (a === "--diff") {
       const next = argv[i + 1];
       opts.diff = next && !next.startsWith("-") ? (i++, next) : "origin/main...HEAD";
+    }
+    else if (a === "--badge-json") {
+      const p = argv[++i];
+      if (!p || p.startsWith("-")) {
+        console.error("driftlint: --badge-json expects a file path");
+        process.exit(2);
+      }
+      opts.badgeJsonPath = p;
     }
     else if (a === "--llm") opts.llm = true;
     else if (a === "--llm-model") {
@@ -189,6 +205,11 @@ async function main(): Promise<void> {
       `driftlint: baseline written to ${path.relative(process.cwd(), p)} (${result.findings.length} findings recorded)`,
     );
     return;
+  }
+
+  if (parsed.badgeJsonPath) {
+    fs.writeFileSync(parsed.badgeJsonPath, `${JSON.stringify(badgeJson(result.stats.score))}\n`);
+    console.error(`driftlint: badge JSON written to ${parsed.badgeJsonPath} (score ${result.stats.score}%)`);
   }
 
   const baseline = loadBaseline(root);

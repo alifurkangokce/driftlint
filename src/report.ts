@@ -48,6 +48,11 @@ export function printReport(result: ScanResult): void {
   console.log(
     `${bold("driftlint:")} ${parts.join(", ")} across ${result.contextFiles.length} context file${result.contextFiles.length === 1 ? "" : "s"}`,
   );
+  if (result.stats.refsChecked > 0) {
+    console.log(
+      dim(`context freshness: ${result.stats.score}% (${result.stats.refsChecked - result.stats.refsBroken}/${result.stats.refsChecked} path references resolve)`),
+    );
+  }
   if (errors === 0 && warnings === 0) {
     console.log(dim("your agent context files agree with your code. rare."));
   }
@@ -61,6 +66,7 @@ export function printJson(result: ScanResult): void {
       {
         root: result.root,
         contextFiles: result.contextFiles,
+        stats: result.stats,
         summary: { errors, warnings, total: result.findings.length },
         findings: result.findings,
       },

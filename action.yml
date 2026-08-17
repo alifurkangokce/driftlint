@@ -20,6 +20,10 @@ inputs:
     description: "On pull_request events, report only drift THIS PR caused (uses the PR base as baseline)"
     required: false
     default: "false"
+  badge-json:
+    description: "Write a shields.io endpoint-badge JSON (context-freshness score) to this path"
+    required: false
+    default: ""
   sarif-file:
     description: "Also write SARIF here and upload it to GitHub code scanning (requires 'security-events: write' permission)"
     required: false
@@ -33,6 +37,9 @@ runs:
         ARGS="${{ inputs.path }} --skill-budget ${{ inputs.skill-budget }}"
         if [ "${{ inputs.fail }}" != "true" ]; then
           ARGS="$ARGS --no-fail"
+        fi
+        if [ -n "${{ inputs.badge-json }}" ]; then
+          ARGS="$ARGS --badge-json ${{ inputs.badge-json }}"
         fi
         if [ "${{ inputs.diff }}" = "true" ] && [ -n "$GITHUB_BASE_REF" ]; then
           git fetch --no-tags --depth=50 origin "$GITHUB_BASE_REF" || true

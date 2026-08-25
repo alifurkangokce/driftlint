@@ -10,7 +10,9 @@ export interface Finding {
     | "narrative-claim"
     | "template-context"
     | "load-budget"
-    | "missing-rationale";
+    | "missing-rationale"
+    | "twin-drift"
+    | "untracked-context";
   severity: Severity;
   /** Context file the claim lives in, relative to the scanned root. */
   file: string;

@@ -1,0 +1,1 @@
+{ "name": "acme", "scripts": { "check": "node --test" } }

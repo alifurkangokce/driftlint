@@ -51,6 +51,12 @@ A linter's only capital is trust, so every release prioritizes precision before 
 - `@driftlint/mcp`: `drift_scan` + `drift_check`, so agents verify context edits before writing them
 - memorywire compatibility statement for Reviewed Memory
 
+## v0.10 — twins ✅ shipped in 0.10.0
+
+- `twin-drift`: CLAUDE.md/AGENTS.md pairs that diverged — the [5,200-reaction problem](https://github.com/anthropics/claude-code/issues/6235) Claude Code marked *not planned*
+- `driftlint twins [--check]`: idempotent marker-block mirror + CI staleness gate
+- `untracked-context`: context files git doesn't track never reach teammates or CI
+
 ## Later, on demand
 
 - VS Code extension (in-process library, markdownlint model) · sandboxed dry-run of documented commands · org-wide scanning

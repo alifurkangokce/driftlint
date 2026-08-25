@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.0 — 2026-08-25
+
+Twins: the CLAUDE.md ↔ AGENTS.md sync problem ([anthropics/claude-code#6235](https://github.com/anthropics/claude-code/issues/6235), 5,200+ 👍, marked *not planned*).
+
+- **`twin-drift`**: flags CLAUDE.md/AGENTS.md pairs in the same directory that carry the same instructions but diverged — command claims present in only one file, near-identical files with drifted lines, or a stale twins mirror. Evidence-gated: intentionally different files and pairs bridged with an `@AGENTS.md` import stay silent.
+- **`driftlint twins`**: mirror one file into the other as a marked, idempotent block (`driftlint-twins:start/end`; default source AGENTS.md — the cross-tool standard). **`driftlint twins --check`** fails CI when the mirror is stale. Never nests memory/twins blocks.
+- **`untracked-context`** (closes #3): context files git doesn't track are flagged — agents on one machine follow them, teammates and CI never see them. Distinguishes *not committed* from *gitignored*; `CLAUDE.local.md` and nested checkouts are exempt.
+- 44-test suite.
+
 ## 0.9.0 — 2026-08-17
 
 The integrations release.

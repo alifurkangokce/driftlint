@@ -1,6 +1,6 @@
 {
   "name": "@alifurkangokce/driftlint-mcp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "MCP server for driftlint: agents scan for context-file drift and verify references before writing them into CLAUDE.md.",
   "type": "module",
   "bin": {
@@ -34,7 +34,7 @@
   },
   "author": "alifurkangokce",
   "dependencies": {
-    "@alifurkangokce/driftlint": "^0.9.0",
+    "@alifurkangokce/driftlint": "^0.10.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "zod": "^3.25.0"
   },

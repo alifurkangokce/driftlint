@@ -10,6 +10,8 @@ const RULE_DESCRIPTIONS: Record<Finding["rule"], string> = {
   "template-context": "File appears to describe a project this repo generates; path/command findings suppressed",
   "load-budget": "Content exceeds a harness load limit and may silently never reach the model",
   "missing-rationale": "Strong directives without a stated reason become unprunable over time",
+  "twin-drift": "CLAUDE.md and AGENTS.md carry the same instructions but have diverged",
+  "untracked-context": "Context file is not tracked by git; teammates and CI never see it",
 };
 
 const LEVEL: Record<Finding["severity"], "error" | "warning" | "note"> = {

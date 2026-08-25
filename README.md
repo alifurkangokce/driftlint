@@ -32,6 +32,18 @@ driftlint memory sync      # approved set → a marked block in CLAUDE.md / AGEN
 
 Why it works: the synced block lives in the files **every agent CLI already reads** (no hooks, no daemon), git distributes it via ordinary PRs, and driftlint scans `.agent-memory/` and the block itself — so when the code moves, the memory that references it gets flagged like any other drift. Claude Code users get a `/memory-propose` command with the plugin. The propose → human-review → commit flow aligns with the governance channel of the [memorywire](https://arxiv.org/pdf/2606.01138) vendor-neutral memory wire format.
 
+## Twins: CLAUDE.md ↔ AGENTS.md
+
+The most-upvoted request on the Claude Code tracker — [support AGENTS.md, 5,200+ 👍](https://github.com/anthropics/claude-code/issues/6235) — is marked *not planned*. So teams using Claude Code next to Codex/Amp/Cursor keep **both** files, and the copies drift: someone fixes the test command in CLAUDE.md, AGENTS.md goes stale, and a week later half the team's agents follow the outdated copy. driftlint attacks this twice:
+
+```bash
+driftlint                  # the twin-drift rule flags pairs that already diverged
+driftlint twins            # mirror AGENTS.md into CLAUDE.md as a marked, idempotent block
+driftlint twins --check    # CI mode: fail when the mirror is stale
+```
+
+The `twin-drift` rule stays quiet for intentionally different files — it fires only on evidence: near-identical files with divergent lines, command claims that exist in one file but not the other, or a stale `driftlint twins` mirror. Pairs bridged with an `@AGENTS.md` import are recognized and skipped.
+
 ## What it checks
 
 | Rule | What it catches |
@@ -45,6 +57,8 @@ Why it works: the synced block lives in the files **every agent CLI already read
 | `template-context` | Workflow files that describe a project this repo *generates* — collapsed into one warning instead of a flood |
 | `load-budget` | Content that silently never reaches the model: AGENTS.md past Codex's 32 KB truncation limit, files past the ~150-instruction adherence ceiling |
 | `missing-rationale` | Directive walls (never/always/must) with no stated reason — [the rules nobody dares delete](https://arxiv.org/abs/2608.11095) |
+| `twin-drift` | CLAUDE.md and AGENTS.md that carry the same instructions but diverged — differing command claims, drifted near-copies, stale `driftlint twins` mirrors |
+| `untracked-context` | Context files git doesn't track — your agent follows them, your teammates' agents never see them (`CLAUDE.local.md` is exempt by convention) |
 
 `dead-command` is workspace-aware: a script that exists in another monorepo package is reported as a *location* warning ("defined in `packages/client/package.json`"), not a dead command.
 

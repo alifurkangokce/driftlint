@@ -5,6 +5,8 @@ export { diffScan, resolveBaseline } from "./diff.js";
 export type { DiffScanResult } from "./diff.js";
 export { checkReference } from "./reference.js";
 export type { ReferenceCheck } from "./reference.js";
+export { syncTwins, checkTwins, buildTwinsBlock } from "./twins.js";
+export type { TwinsResult, TwinsCheck } from "./twins.js";
 export { toSarif } from "./sarif.js";
 export { toRdjsonl } from "./rdjsonl.js";
 export { badgeJson } from "./badge.js";

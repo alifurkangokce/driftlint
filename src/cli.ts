@@ -17,6 +17,11 @@ Usage:
   driftlint memory <propose|review|list|sync>   Reviewed Memory: agents propose,
                        humans approve, \`sync\` writes the approved set into
                        CLAUDE.md/AGENTS.md/GEMINI.md as a verified block
+  driftlint twins [dir] [--source <file>] [--check]
+                       mirror AGENTS.md into CLAUDE.md (or the reverse) as a
+                       marked block, so Claude Code and Codex/Amp/Cursor read
+                       the same instructions; --check fails CI when the mirror
+                       is stale (the anthropics/claude-code#6235 problem)
 
 Options:
   --json               machine-readable output
@@ -50,6 +55,9 @@ Checks:
   template-context   workflow files that describe a project this repo GENERATES (collapsed)
   load-budget        content past a harness limit (AGENTS.md 32KB, ~150-instruction adherence)
   missing-rationale  strong directives with no stated reason — the rules nobody dares delete
+  twin-drift         CLAUDE.md and AGENTS.md that carry the same instructions but diverged
+                     (unbridged near-copies, differing command claims, stale twins mirror)
+  untracked-context  context files git doesn't track — your agent sees them, your team's don't
   narrative-claim    (--llm only) narrative claims the code contradicts
 
 Config (.driftlintrc.json at the scanned root):
@@ -145,6 +153,10 @@ async function main(): Promise<void> {
   if (process.argv[2] === "memory") {
     const { runMemoryCli } = await import("./memory.js");
     process.exit(await runMemoryCli(process.argv.slice(3)));
+  }
+  if (process.argv[2] === "twins") {
+    const { runTwinsCli } = await import("./twins.js");
+    process.exit(runTwinsCli(process.argv.slice(3)));
   }
   const parsed = parseArgs(process.argv.slice(2));
   if (parsed === "help") {

@@ -87,6 +87,48 @@ export function extractRefs(file: ContextFile): { paths: PathRef[]; commands: Co
   return { paths, commands };
 }
 
+export interface LinkRef {
+  /** Link target path, "" for a same-file `#anchor` link. */
+  target: string;
+  anchor?: string;
+  line: number;
+}
+
+/** Markdown link/image targets that point inside the repo — `[x](docs/a.md#setup)`. */
+export function extractLinks(file: ContextFile): LinkRef[] {
+  const links: LinkRef[] = [];
+  let inFence = false;
+  for (let i = 0; i < file.lines.length; i++) {
+    const line = file.lines[i] ?? "";
+    const prev = i > 0 ? file.lines[i - 1] ?? "" : "";
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    if (line.includes("driftlint-ignore") || prev.includes("driftlint-ignore")) continue;
+
+    for (const m of line.matchAll(/!?\[[^\]]*\]\(([^()\s]+(?:\s+"[^"]*")?)\)/g)) {
+      let t = (m[1] ?? "").replace(/\s+"[^"]*"$/, "").replace(/^<|>$/g, "");
+      try {
+        t = decodeURI(t);
+      } catch {
+        continue;
+      }
+      // external, site-absolute, and templated targets aren't repo claims
+      if (!t || /^[a-z][a-z0-9+.-]*:/i.test(t) || t.startsWith("//") || t.startsWith("/") || t.startsWith("~")) continue;
+      if (/[<>{}$*|`\\]/.test(t)) continue;
+      const hash = t.indexOf("#");
+      const target = hash === -1 ? t : t.slice(0, hash);
+      const anchor = hash === -1 ? undefined : t.slice(hash + 1).trim();
+      if (!target && !anchor) continue;
+      if (/(^|\/)path\/to(\/|$)/.test(target)) continue;
+      links.push({ target, ...(anchor ? { anchor } : {}), line: i + 1 });
+    }
+  }
+  return links;
+}
+
 function cleanToken(raw: string): string | null {
   let s = raw.trim();
   if (!s || s.length > 200) return null;

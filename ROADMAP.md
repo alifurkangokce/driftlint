@@ -61,6 +61,10 @@ A linter's only capital is trust, so every release prioritizes precision before 
 
 - `driftlint memory audit`: verify Claude Code's per-project auto memory against the repo — dead refs in memories, broken `[[links]]`, MEMORY.md past the load fold; other-repo memories collapse
 
+## v0.12 — links ✅ shipped in 0.12.0
+
+- `dead-link`: markdown link targets and `#anchor` headings inside context files, with closest-heading fixes
+
 ## Later, on demand
 
 - VS Code extension (in-process library, markdownlint model) · sandboxed dry-run of documented commands · org-wide scanning

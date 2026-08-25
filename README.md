@@ -69,6 +69,7 @@ The `twin-drift` rule stays quiet for intentionally different files — it fires
 | `missing-rationale` | Directive walls (never/always/must) with no stated reason — [the rules nobody dares delete](https://arxiv.org/abs/2608.11095) |
 | `twin-drift` | CLAUDE.md and AGENTS.md that carry the same instructions but diverged — differing command claims, drifted near-copies, stale `driftlint twins` mirrors |
 | `untracked-context` | Context files git doesn't track — your agent follows them, your teammates' agents never see them (`CLAUDE.local.md` is exempt by convention) |
+| `dead-link` | Markdown links whose target file moved, or whose `#anchor` heading was renamed — with the closest heading offered as a fix |
 
 `dead-command` is workspace-aware: a script that exists in another monorepo package is reported as a *location* warning ("defined in `packages/client/package.json`"), not a dead command.
 

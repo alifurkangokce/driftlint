@@ -2,8 +2,9 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { buildIndex, walk } from "./fswalk.js";
-import { extractRefs } from "./extract.js";
+import { extractLinks, extractRefs } from "./extract.js";
 import { checkDeadPaths } from "./checks/deadPaths.js";
+import { checkLinks } from "./checks/links.js";
 import { buildCommandIndex, checkDeadCommands } from "./checks/deadCommands.js";
 import type { ContextFile, Finding, ScanResult } from "./types.js";
 
@@ -59,6 +60,14 @@ export function auditMemory(repoRoot: string, memoryDir: string): ScanResult {
   const index = buildIndex(repoRoot, entries);
   const cmdIndex = buildCommandIndex(repoRoot, entries);
   const files = readMemoryFiles(memoryDir);
+  // MEMORY.md is an index of `[Title](topic.md)` pointers into its own
+  // directory, so links resolve against the memory dir, not the repo
+  const memBasenames = new Map<string, string[]>();
+  for (const f of files) {
+    const base = path.posix.basename(f.path);
+    memBasenames.set(base, [...(memBasenames.get(base) ?? []), f.path]);
+  }
+  const memIndex = { root: memoryDir, basenames: memBasenames };
 
   const findings: Finding[] = [];
   // [[links]] may target the file basename OR the frontmatter `name:` slug,
@@ -103,6 +112,8 @@ export function auditMemory(repoRoot: string, memoryDir: string): ScanResult {
     refsBroken += dead.findings.filter(
       (f) => f.severity === "error" && !f.message.includes("anywhere in the repo"),
     ).length;
+
+    findings.push(...checkLinks(file, extractLinks(file), memIndex));
 
     // [[wiki-links]] between memories: a link to a deleted memory dangles forever
     for (let i = 0; i < file.lines.length; i++) {

@@ -12,6 +12,7 @@ const RULE_DESCRIPTIONS: Record<Finding["rule"], string> = {
   "missing-rationale": "Strong directives without a stated reason become unprunable over time",
   "twin-drift": "CLAUDE.md and AGENTS.md carry the same instructions but have diverged",
   "untracked-context": "Context file is not tracked by git; teammates and CI never see it",
+  "dead-link": "Markdown link points at a file or heading anchor that does not exist",
 };
 
 const LEVEL: Record<Finding["severity"], "error" | "warning" | "note"> = {

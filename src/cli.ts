@@ -63,6 +63,7 @@ Checks:
   twin-drift         CLAUDE.md and AGENTS.md that carry the same instructions but diverged
                      (unbridged near-copies, differing command claims, stale twins mirror)
   untracked-context  context files git doesn't track — your agent sees them, your team's don't
+  dead-link          markdown links to files that moved or #anchors that were renamed
   narrative-claim    (--llm only) narrative claims the code contradicts
 
 Config (.driftlintrc.json at the scanned root):

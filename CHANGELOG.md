@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.12.0 — 2026-08-25
+
+Links are instructions too.
+
+- **`dead-link`** (closes #2): markdown links inside context files are verified — a moved target file is an error (with a did-you-mean fix), a renamed `#anchor` heading is a warning with the closest heading offered as the fix. GitHub-flavored slugs, duplicate-heading suffixes (`#setup-1`), `{#custom-id}` attributes and `<a name>`/`id` anchors all resolve; `#L42` line anchors, external/absolute/templated targets, fenced examples and future-file prose are skipped.
+- `memory audit` uses it too, so a `MEMORY.md` index pointing at a deleted topic file is caught.
+- Dogfooded against 106 real index links and this repo's own README with zero false positives.
+- 59-test suite.
+
 ## 0.11.0 — 2026-08-25
 
 Auto-memory audit: agent memories decay too — and they live outside the repo where no linter looks.

@@ -57,6 +57,10 @@ A linter's only capital is trust, so every release prioritizes precision before 
 - `driftlint twins [--check]`: idempotent marker-block mirror + CI staleness gate
 - `untracked-context`: context files git doesn't track never reach teammates or CI
 
+## v0.11 — auto-memory audit ✅ shipped in 0.11.0
+
+- `driftlint memory audit`: verify Claude Code's per-project auto memory against the repo — dead refs in memories, broken `[[links]]`, MEMORY.md past the load fold; other-repo memories collapse
+
 ## Later, on demand
 
 - VS Code extension (in-process library, markdownlint model) · sandboxed dry-run of documented commands · org-wide scanning

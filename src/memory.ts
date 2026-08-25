@@ -188,6 +188,24 @@ export async function runMemoryCli(argv: string[]): Promise<number> {
     return 0;
   }
 
-  console.error("driftlint memory <propose|review|list|sync>");
+  if (sub === "audit") {
+    const { auditMemory, findMemoryDir } = await import("./memoryAudit.js");
+    const { printJson, printReport } = await import("./report.js");
+    const repo = path.resolve(flag("repo") ?? root);
+    const memDir = flag("dir") ?? findMemoryDir(repo);
+    if (!memDir) {
+      console.log(
+        "driftlint memory audit: no Claude Code auto-memory found for this project (~/.claude/projects/<project>/memory) — pass --dir to point at one.",
+      );
+      return 0;
+    }
+    console.error(`driftlint memory audit: ${memDir} → verified against ${repo}`);
+    const result = auditMemory(repo, memDir);
+    if (argv.includes("--json")) printJson(result);
+    else printReport(result);
+    return result.findings.some((f) => f.severity === "error") ? 1 : 0;
+  }
+
+  console.error("driftlint memory <propose|review|list|sync|audit>");
   return 2;
 }

@@ -32,6 +32,16 @@ driftlint memory sync      # approved set → a marked block in CLAUDE.md / AGEN
 
 Why it works: the synced block lives in the files **every agent CLI already reads** (no hooks, no daemon), git distributes it via ordinary PRs, and driftlint scans `.agent-memory/` and the block itself — so when the code moves, the memory that references it gets flagged like any other drift. Claude Code users get a `/memory-propose` command with the plugin. The propose → human-review → commit flow aligns with the governance channel of the [memorywire](https://arxiv.org/pdf/2606.01138) vendor-neutral memory wire format.
 
+### Auto-memory audit
+
+Claude Code also keeps its own [auto memory](https://code.claude.com/docs/en/memory) per project (`~/.claude/projects/<project>/memory/`) — and those memories decay exactly like context files, except they live *outside* the repo where no repo-scoped linter ever looks:
+
+```bash
+driftlint memory audit        # finds the memory dir for the current repo automatically
+```
+
+It verifies every memory against the repo it describes: **dead paths and removed commands** referenced in memories, **broken `[[wiki-links]]`** between memories (resolved via filenames *and* frontmatter `name:` slugs), and a **MEMORY.md past the 200-line / 25KB fold** — everything below it silently never loads into a session. Memories that record facts about *other* repos are recognized and collapsed into one info line instead of a flood.
+
 ## Twins: CLAUDE.md ↔ AGENTS.md
 
 The most-upvoted request on the Claude Code tracker — [support AGENTS.md, 5,200+ 👍](https://github.com/anthropics/claude-code/issues/6235) — is marked *not planned*. So teams using Claude Code next to Codex/Amp/Cursor keep **both** files, and the copies drift: someone fixes the test command in CLAUDE.md, AGENTS.md goes stale, and a week later half the team's agents follow the outdated copy. driftlint attacks this twice:

@@ -90,9 +90,9 @@ export function extractRefs(file: ContextFile): { paths: PathRef[]; commands: Co
 function cleanToken(raw: string): string | null {
   let s = raw.trim();
   if (!s || s.length > 200) return null;
-  // strip trailing prose punctuation and :line[:col] suffixes
+  // strip trailing prose punctuation and :line[:col] / :start-end suffixes
   s = s.replace(/[.,;!?]+$/, "");
-  s = s.replace(/:\d+(:\d+)?$/, "");
+  s = s.replace(/:\d+(?:[-–:]\d+)*$/, "");
   if (!s) return null;
   return s;
 }

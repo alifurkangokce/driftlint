@@ -17,6 +17,11 @@ Usage:
   driftlint memory <propose|review|list|sync>   Reviewed Memory: agents propose,
                        humans approve, \`sync\` writes the approved set into
                        CLAUDE.md/AGENTS.md/GEMINI.md as a verified block
+  driftlint memory audit [--repo <path>] [--dir <memory-dir>] [--json]
+                       verify Claude Code auto-memory (~/.claude/projects/…/memory)
+                       against the repo it describes: dead paths/commands in
+                       memories, broken [[links]], MEMORY.md past the 200-line
+                       fold that never loads
   driftlint twins [dir] [--source <file>] [--check]
                        mirror AGENTS.md into CLAUDE.md (or the reverse) as a
                        marked block, so Claude Code and Codex/Amp/Cursor read

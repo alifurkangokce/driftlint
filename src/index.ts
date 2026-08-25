@@ -7,6 +7,7 @@ export { checkReference } from "./reference.js";
 export type { ReferenceCheck } from "./reference.js";
 export { syncTwins, checkTwins, buildTwinsBlock } from "./twins.js";
 export type { TwinsResult, TwinsCheck } from "./twins.js";
+export { auditMemory, findMemoryDir } from "./memoryAudit.js";
 export { toSarif } from "./sarif.js";
 export { toRdjsonl } from "./rdjsonl.js";
 export { badgeJson } from "./badge.js";

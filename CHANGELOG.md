@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.11.0 — 2026-08-25
+
+Auto-memory audit: agent memories decay too — and they live outside the repo where no linter looks.
+
+- **`driftlint memory audit`**: locates Claude Code's per-project auto memory (`~/.claude/projects/<project>/memory/`, `CLAUDE_CONFIG_DIR` honored, `--dir` to override) and verifies it against the repo — dead paths and removed commands referenced in memories, broken `[[wiki-links]]` (resolved via filenames *and* frontmatter `name:` slugs, kebab/snake tolerant), and MEMORY.md past the 200-line / 25KB fold that silently never loads.
+- Precision-first, dogfooded on a 107-file real memory directory: memories describing *other* repos collapse into one `foreign-context` info (same thresholds as the scanner); bare filenames warn instead of erroring; `path.ts:70-77` line-range suffixes now strip cleanly everywhere.
+- Library exports: `auditMemory`, `findMemoryDir`.
+- 52-test suite.
+
 ## 0.10.0 — 2026-08-25
 
 Twins: the CLAUDE.md ↔ AGENTS.md sync problem ([anthropics/claude-code#6235](https://github.com/anthropics/claude-code/issues/6235), 5,200+ 👍, marked *not planned*).

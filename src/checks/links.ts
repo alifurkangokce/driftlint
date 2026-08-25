@@ -21,6 +21,7 @@ const PLACEHOLDER_SEGMENTS = new Set([
 
 /** Line-number anchors (`#L42`, `#L10-L20`) are a code-host feature, not a heading. */
 const LINE_ANCHOR = /^L\d+(?:-L?\d+)?$/;
+const FUTURE_ARTIFACT_LINE = /creat(e|ed|es|ing)|will be|generated|\(optional\)|if (it )?(does ?n[o']t|doesn't) exist/i;
 
 export function checkLinks(
   file: ContextFile,
@@ -32,9 +33,9 @@ export function checkLinks(
   const anchorCache = new Map<string, Set<string> | null>();
 
   for (const link of links) {
-    const srcLine = file.lines[link.line - 1] ?? "";
     // lines describing artifacts that get created later aren't claims about now
-    if (/creat(e|ed|es|ing)|will be|generated|\(optional\)|if (it )?(does ?n[o']t|doesn't) exist/i.test(srcLine)) continue;
+    const sourceLines = link.usageLines ?? [link.line];
+    if (sourceLines.every((line) => FUTURE_ARTIFACT_LINE.test(file.lines[line - 1] ?? ""))) continue;
 
     const rel = link.target ? path.posix.normalize(path.posix.join(fileDir === "." ? "" : fileDir, link.target)) : file.path;
     if (rel.startsWith("..")) continue; // escapes the scanned root — not ours to verify
@@ -53,7 +54,9 @@ export function checkLinks(
         line: link.line,
         message: `link target \`${link.target}\` does not exist.`,
         ...(elsewhere.length ? { hint: `did you mean \`${elsewhere.slice(0, 3).join("\`, \`")}\`?` } : {}),
-        ...(single ? { fix: { oldText: link.target, newText: relativeTo(fileDir, single) } } : {}),
+        ...(single && !link.isReference
+          ? { fix: { oldText: link.target, newText: relativeTo(fileDir, single) } }
+          : {}),
       });
       continue;
     }
@@ -74,7 +77,7 @@ export function checkLinks(
       line: link.line,
       message: `\`${link.target || rel}\` has no \`#${link.anchor}\` heading.`,
       ...(close.length ? { hint: `closest: \`#${close.join("\`, \`#")}\`` } : {}),
-      ...(close.length === 1 && close[0]
+      ...(close.length === 1 && close[0] && !link.isReference
         ? { fix: { oldText: `#${link.anchor}`, newText: `#${close[0]}` } }
         : {}),
     });

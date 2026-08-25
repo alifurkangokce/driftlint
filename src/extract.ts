@@ -92,11 +92,21 @@ export interface LinkRef {
   target: string;
   anchor?: string;
   line: number;
+  /** Lines whose reference-style usages activated this definition. */
+  usageLines?: number[];
+  /** Reference definitions are reported but not auto-fixed ambiguously. */
+  isReference?: boolean;
 }
+
+const INLINE_LINK = /!?\[[^\]]*\]\(([^()\s]+(?:\s+"[^"]*")?)\)/g;
+const REFERENCE_DEFINITION = /^\s{0,3}\[([^\]\n]+)\]:\s*(<[^>\n]*>|\S+)(?:\s+(?:"[^"]*"|'[^']*'|\([^)]*\)))?\s*$/;
+const REFERENCE_USAGE = /(?<![\\!])!?\[([^\]\n]*)\]\[([^\]\n]*)\]/g;
 
 /** Markdown link/image targets that point inside the repo — `[x](docs/a.md#setup)`. */
 export function extractLinks(file: ContextFile): LinkRef[] {
   const links: LinkRef[] = [];
+  const definitions = collectReferenceDefinitions(file);
+  const referenceUsages = new Map<string, Set<number>>();
   let inFence = false;
   for (let i = 0; i < file.lines.length; i++) {
     const line = file.lines[i] ?? "";
@@ -108,25 +118,87 @@ export function extractLinks(file: ContextFile): LinkRef[] {
     if (inFence) continue;
     if (line.includes("driftlint-ignore") || prev.includes("driftlint-ignore")) continue;
 
-    for (const m of line.matchAll(/!?\[[^\]]*\]\(([^()\s]+(?:\s+"[^"]*")?)\)/g)) {
-      let t = (m[1] ?? "").replace(/\s+"[^"]*"$/, "").replace(/^<|>$/g, "");
-      try {
-        t = decodeURI(t);
-      } catch {
-        continue;
-      }
-      // external, site-absolute, and templated targets aren't repo claims
-      if (!t || /^[a-z][a-z0-9+.-]*:/i.test(t) || t.startsWith("//") || t.startsWith("/") || t.startsWith("~")) continue;
-      if (/[<>{}$*|`\\]/.test(t)) continue;
-      const hash = t.indexOf("#");
-      const target = hash === -1 ? t : t.slice(0, hash);
-      const anchor = hash === -1 ? undefined : t.slice(hash + 1).trim();
-      if (!target && !anchor) continue;
-      if (/(^|\/)path\/to(\/|$)/.test(target)) continue;
-      links.push({ target, ...(anchor ? { anchor } : {}), line: i + 1 });
+    if (REFERENCE_DEFINITION.test(line)) continue;
+
+    for (const m of line.matchAll(INLINE_LINK)) {
+      const link = parseLinkTarget(m[1] ?? "", i + 1);
+      if (link) links.push(link);
+    }
+
+    // Full and collapsed references only. Shortcut references (`[label]`) are
+    // intentionally excluded: without a markdown parser they collide with
+    // bracketed prose, footnotes, task markers, and code-span examples.
+    const referenceText = line.replace(INLINE_LINK, (link) => " ".repeat(link.length));
+    for (const m of referenceText.matchAll(REFERENCE_USAGE)) {
+      const label = normalizeReferenceLabel(m[2] || m[1] || "");
+      const definition = definitions.get(label);
+      if (!definition) continue;
+      const usageLines = referenceUsages.get(label) ?? new Set<number>();
+      usageLines.add(i + 1);
+      referenceUsages.set(label, usageLines);
     }
   }
+
+  for (const [label, usageLines] of referenceUsages) {
+    const definition = definitions.get(label);
+    if (definition) links.push({ ...definition, usageLines: [...usageLines], isReference: true });
+  }
+  links.sort((a, b) => a.line - b.line);
   return links;
+}
+
+/** Collect eligible definitions first so usages can precede them. */
+function collectReferenceDefinitions(file: ContextFile): Map<string, LinkRef | null> {
+  const definitions = new Map<string, LinkRef | null>();
+  let inFence = false;
+  for (let i = 0; i < file.lines.length; i++) {
+    const line = file.lines[i] ?? "";
+    const prev = i > 0 ? file.lines[i - 1] ?? "" : "";
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
+    if (line.includes("driftlint-ignore") || prev.includes("driftlint-ignore")) continue;
+
+    const m = REFERENCE_DEFINITION.exec(line);
+    if (!m?.[1] || !m[2]) continue;
+    const label = normalizeReferenceLabel(m[1]);
+    if (!label || definitions.has(label)) continue; // first definition wins
+    definitions.set(label, parseLinkTarget(m[2], i + 1));
+  }
+  return definitions;
+}
+
+function normalizeReferenceLabel(label: string): string {
+  return label.trim().replace(/\s+/g, " ").toUpperCase().toLowerCase();
+}
+
+function parseLinkTarget(
+  raw: string,
+  line: number,
+): LinkRef | null {
+  let targetWithAnchor = raw.replace(/\s+"[^"]*"$/, "").replace(/^<|>$/g, "");
+  try {
+    targetWithAnchor = decodeURI(targetWithAnchor);
+  } catch {
+    return null;
+  }
+  // External, site-absolute, and templated targets aren't repo claims.
+  if (
+    !targetWithAnchor ||
+    /^[a-z][a-z0-9+.-]*:/i.test(targetWithAnchor) ||
+    targetWithAnchor.startsWith("//") ||
+    targetWithAnchor.startsWith("/") ||
+    targetWithAnchor.startsWith("~")
+  ) return null;
+  if (/[<>{}$*|`\\]/.test(targetWithAnchor)) return null;
+  const hash = targetWithAnchor.indexOf("#");
+  const target = hash === -1 ? targetWithAnchor : targetWithAnchor.slice(0, hash);
+  const anchor = hash === -1 ? undefined : targetWithAnchor.slice(hash + 1).trim();
+  if (!target && !anchor) return null;
+  if (/(^|\/)path\/to(\/|$)/.test(target)) return null;
+  return { target, ...(anchor ? { anchor } : {}), line };
 }
 
 function cleanToken(raw: string): string | null {

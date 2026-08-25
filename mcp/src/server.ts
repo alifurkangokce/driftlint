@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import * as fs from "node:fs";
 import { z } from "zod";
 import { checkReference, diffScan, scan } from "@alifurkangokce/driftlint";
 
@@ -10,7 +11,12 @@ import { checkReference, diffScan, scan } from "@alifurkangokce/driftlint";
  * reports findings and suggested fixes; applying them is the agent's job.
  */
 
-const server = new McpServer({ name: "driftlint", version: "0.1.0" });
+// read from the manifest so the advertised version can't drift from the package
+const { version } = JSON.parse(
+  fs.readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+) as { version: string };
+
+const server = new McpServer({ name: "driftlint", version });
 
 server.tool(
   "drift_scan",

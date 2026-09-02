@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.14.0 — 2026-09-02
+
+The first outside contribution — thank you [@LunaMeerkats](https://github.com/LunaMeerkats).
+
+- **Reference-style markdown links** (closes #8, contributed in #9): `[text][label]` and collapsed `[label][]` usages are resolved against their definitions, with the finding reported at the definition line (the one place an author can fix it). Definitions are collected in a first pass so a usage may precede its definition, the first definition wins (CommonMark), inline links are masked before reference scanning, and the future-artifact suppression now spans every usage line. Shortcut references (`[label]`) stay out of scope on purpose: without a full markdown parser they collide with ordinary bracketed prose.
+- Precision fix found by dogfooding: `ALL_CAPS` link targets (`[ticket](TFS_LINK)`) are fill-in markers, not claims that a file exists.
+- 74-test suite.
+
 ## 0.13.0 — 2026-09-02
 
 Silent config: the JSON is valid, the file isn't there.

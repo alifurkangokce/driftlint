@@ -37,6 +37,10 @@ export function checkLinks(
     const sourceLines = link.usageLines ?? [link.line];
     if (sourceLines.every((line) => FUTURE_ARTIFACT_LINE.test(file.lines[line - 1] ?? ""))) continue;
 
+    // fill-in markers ("see the ticket at [details](TFS_LINK)") are placeholders
+    // an author is expected to replace, not claims that a file exists
+    if (/^[A-Z][A-Z0-9_]*$/.test(link.target)) continue;
+
     const rel = link.target ? path.posix.normalize(path.posix.join(fileDir === "." ? "" : fileDir, link.target)) : file.path;
     if (rel.startsWith("..")) continue; // escapes the scanned root — not ours to verify
     const segments = rel.split("/");

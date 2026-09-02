@@ -165,6 +165,14 @@ test("discovery: Cursor skills are Agent Skills too, so budget rules apply there
   assert.equal(found.length, 1);
 });
 
+test("dead-link: ALL_CAPS fill-in markers are placeholders, not claims", () => {
+  const dir = tmp({
+    "CLAUDE.md": "# App\n\nTicket: [details](TFS_LINK) · docs: [guide](YOUR_DOC_URL)\n\nReal: [readme](README.md)\n",
+    "README.md": "# Readme\n",
+  });
+  assert.deepEqual(of(dir, "dead-link"), []);
+});
+
 // --- skill listing cap (official 1,536-char truncation) ---
 
 test("dead-config-ref: allow rules warn, deny/ask rules are left alone", () => {

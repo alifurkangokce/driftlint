@@ -69,6 +69,10 @@ A linter's only capital is trust, so every release prioritizes precision before 
 
 - `dead-config-ref` (hooks, MCP servers, plugin manifests, skill scripts) · `silent-config` (Cursor `.md`, misplaced skills) · per-skill 1,536-char listing cut · Cursor skill discovery
 
+## v0.14 — reference links ✅ shipped in 0.14.0
+
+- Reference-style link support (community contribution, #9) + `ALL_CAPS` placeholder suppression
+
 ## Later, on demand
 
 - VS Code extension (in-process library, markdownlint model) · sandboxed dry-run of documented commands · org-wide scanning

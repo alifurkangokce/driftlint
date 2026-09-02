@@ -70,8 +70,22 @@ The `twin-drift` rule stays quiet for intentionally different files — it fires
 | `twin-drift` | CLAUDE.md and AGENTS.md that carry the same instructions but diverged — differing command claims, drifted near-copies, stale `driftlint twins` mirrors |
 | `untracked-context` | Context files git doesn't track — your agent follows them, your teammates' agents never see them (`CLAUDE.local.md` is exempt by convention) |
 | `dead-link` | Markdown links whose target file moved, or whose `#anchor` heading was renamed — with the closest heading offered as a fix |
+| `silent-config` | Config in a shape or place the tool ignores: a plain `.md` under `.cursor/rules` (Cursor needs `.mdc`), a bare `.md` where a `<name>/SKILL.md` belongs |
+| `dead-config-ref` | Hooks, MCP servers, plugin manifests and skill `allowed-tools` pointing at scripts that don't exist — valid JSON, missing file |
 
 `dead-command` is workspace-aware: a script that exists in another monorepo package is reported as a *location* warning ("defined in `packages/client/package.json`"), not a dead command.
+
+## Config that never loads
+
+Schema validators check that your JSON is well-formed. driftlint checks whether the thing it points at is actually there — and whether the file will be read at all:
+
+- a hook whose script was moved (`$CLAUDE_PROJECT_DIR/.claude/hooks/guard.sh`) fails the first time it fires, silently
+- an MCP server whose local entry file is gone never starts (remote `npx`/`docker` servers are left alone)
+- a plugin manifest listing a command that isn't there installs fine and does nothing
+- a plain `.md` under `.cursor/rules` is [ignored by Cursor](https://cursor.com/docs/context/rules) — no error, no rule
+- a skill whose `description` + `when_to_use` runs past **1,536 characters** loses the tail: [that's where the skill listing truncates](https://code.claude.com/docs/en/skills)
+
+Skills are discovered wherever the [Agent Skills](https://agentskills.io) standard puts them — `.claude/skills/` and `.cursor/skills/` alike.
 
 ## Usage
 

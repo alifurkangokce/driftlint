@@ -8,10 +8,13 @@ function kindOf(rel: string): ContextFile["kind"] | null {
   if (base === "CLAUDE.md" || base === "CLAUDE.local.md") return "claude-md";
   if (base === "AGENTS.md") return "agents-md";
   if (rel === ".github/copilot-instructions.md") return "copilot";
-  if (/(^|\/)\.claude\/skills\/[^/]+\/SKILL\.md$/.test(rel)) return "skill";
+  // Agent Skills (agentskills.io) is a cross-tool standard now: Claude Code and
+  // Cursor both load <name>/SKILL.md, so the same budget/reference checks apply.
+  if (/(^|\/)\.(claude|cursor)\/skills\/[^/]+\/SKILL\.md$/.test(rel)) return "skill";
   if (/(^|\/)\.claude\/agents\/[^/]+\.md$/.test(rel)) return "subagent";
   if (/(^|\/)\.claude\/commands\/[^/]+\.md$/.test(rel)) return "command";
-  if (/(^|\/)\.cursor\/rules\/[^/]+\.(md|mdc)$/.test(rel)) return "cursor-rule";
+  // Cursor only reads .mdc here; plain .md never loads (see checkSilentConfig)
+  if (/(^|\/)\.cursor\/rules\/[^/]+\.mdc$/.test(rel)) return "cursor-rule";
   if (base === "GEMINI.md") return "gemini";
   if (base === ".windsurfrules") return "windsurf";
   if (base === ".clinerules") return "cline";

@@ -64,6 +64,8 @@ Checks:
                      (unbridged near-copies, differing command claims, stale twins mirror)
   untracked-context  context files git doesn't track — your agent sees them, your team's don't
   dead-link          markdown links to files that moved or #anchors that were renamed
+  silent-config      config the tool ignores (.cursor/rules/*.md, misplaced skills)
+  dead-config-ref    hooks/MCP/plugin/skill config pointing at scripts that don't exist
   narrative-claim    (--llm only) narrative claims the code contradicts
 
 Config (.driftlintrc.json at the scanned root):

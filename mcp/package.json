@@ -34,7 +34,7 @@
   },
   "author": "alifurkangokce",
   "dependencies": {
-    "@alifurkangokce/driftlint": "^0.12.0",
+    "@alifurkangokce/driftlint": "^0.13.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "zod": "^3.25.0"
   },

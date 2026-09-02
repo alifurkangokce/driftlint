@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.0 — 2026-09-02
+
+Silent config: the JSON is valid, the file isn't there.
+
+- **`dead-config-ref`**: hook commands, MCP server `command`/`args`, plugin/marketplace manifest paths and skill `allowed-tools` scripts are resolved against the tree — `${CLAUDE_PROJECT_DIR}`, `${CLAUDE_PLUGIN_ROOT}` and `${CLAUDE_SKILL_DIR}` expanded, plugin manifests resolved against the plugin root, did-you-mean hints from the repo index. Remote servers (`npx`, `uvx`, `docker`), machine paths, `~`, unresolvable variables and globs are skipped; `permissions.allow` entries warn while `deny`/`ask` rules are left alone.
+- **`silent-config`**: a plain `.md` under `.cursor/rules` never loads ([Cursor requires `.mdc`](https://cursor.com/docs/context/rules)); a bare `.md` where `<name>/SKILL.md` belongs is never picked up. Cursor `.md` rules are no longer linted as if they were live.
+- **`skill-budget`** gained the official hard cut: `description` + `when_to_use` past **1,536 characters** is truncated in the skill listing, so the tail never reaches the model.
+- Skills are now discovered under `.cursor/skills/` as well as `.claude/skills/` — [Agent Skills](https://agentskills.io) is a cross-tool standard.
+- Validated on six real local repos plus this one: zero false positives from the new rules. 70-test suite.
+
 ## 0.12.0 — 2026-08-25
 
 Links are instructions too.

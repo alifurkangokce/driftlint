@@ -1,6 +1,6 @@
 {
   "name": "@alifurkangokce/driftlint",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "Finds the claims in your CLAUDE.md / AGENTS.md / skills that your code no longer supports.",
   "type": "module",
   "bin": {

@@ -65,6 +65,10 @@ A linter's only capital is trust, so every release prioritizes precision before 
 
 - `dead-link`: markdown link targets and `#anchor` headings inside context files, with closest-heading fixes
 
+## v0.13 — silent config ✅ shipped in 0.13.0
+
+- `dead-config-ref` (hooks, MCP servers, plugin manifests, skill scripts) · `silent-config` (Cursor `.md`, misplaced skills) · per-skill 1,536-char listing cut · Cursor skill discovery
+
 ## Later, on demand
 
 - VS Code extension (in-process library, markdownlint model) · sandboxed dry-run of documented commands · org-wide scanning

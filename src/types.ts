@@ -13,7 +13,9 @@ export interface Finding {
     | "missing-rationale"
     | "twin-drift"
     | "untracked-context"
-    | "dead-link";
+    | "dead-link"
+    | "silent-config"
+    | "dead-config-ref";
   severity: Severity;
   /** Context file the claim lives in, relative to the scanned root. */
   file: string;

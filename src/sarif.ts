@@ -13,6 +13,8 @@ const RULE_DESCRIPTIONS: Record<Finding["rule"], string> = {
   "twin-drift": "CLAUDE.md and AGENTS.md carry the same instructions but have diverged",
   "untracked-context": "Context file is not tracked by git; teammates and CI never see it",
   "dead-link": "Markdown link points at a file or heading anchor that does not exist",
+  "silent-config": "Config file is in a shape or location the agent CLI silently ignores",
+  "dead-config-ref": "Agent config references a script or file that does not exist",
 };
 
 const LEVEL: Record<Finding["severity"], "error" | "warning" | "note"> = {

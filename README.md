@@ -5,12 +5,15 @@
 **Your CLAUDE.md is lying to your agent.** driftlint keeps agent context files true, two ways: a **drift linter** that finds the claims in `CLAUDE.md`, `AGENTS.md`, skills, subagents and cursor rules that your code no longer supports — and **Reviewed Memory**, the missing approval layer between what your agents learn and what your team ships into CLAUDE.md.
 
 ```bash
-npx @alifurkangokce/driftlint
+npx @alifurkangokce/driftlint          # lint this repo
+npx @alifurkangokce/driftlint twins    # keep CLAUDE.md and AGENTS.md in sync
 ```
 
 ![driftlint demo](docs/demo.gif)
 
-Zero config. No API key. Works on any repo.
+Zero config. No API key. Zero runtime dependencies. Works on any repo.
+
+> **The two-file problem:** Claude Code reads CLAUDE.md; Codex, Cursor, Amp and 30+ other tools read AGENTS.md. Asking for both is [the most-upvoted request on the Claude Code tracker](https://github.com/anthropics/claude-code/issues/6235) — 5,200+ reactions, marked *not planned* — so teams keep two copies, and the copies drift silently. `driftlint twins --check` is the CI gate for that; the `twin-drift` rule catches pairs that already diverged.
 
 ## Why
 

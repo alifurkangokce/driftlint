@@ -1,0 +1,37 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1280px; height: 640px; }
+  body {
+    background: #0d1117; color: #e6edf3;
+    font: 400 22px/1.5 -apple-system, "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+    padding: 64px 76px 56px; position: relative; overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .glow { position: absolute; width: 720px; height: 720px; right: -260px; top: -250px;
+    background: radial-gradient(circle, rgba(240,136,62,.18) 0%, rgba(240,136,62,0) 68%); }
+  h1 { font-size: 78px; line-height: 1; letter-spacing: -.045em; font-weight: 700; }
+  h1 .dot { color: #f0883e; }
+  .tag { font-size: 27px; color: #f0883e; font-weight: 600; margin-top: 20px; }
+  .sub { font-size: 23px; color: #a6b1bd; margin-top: 14px; max-width: 830px; }
+  .term { margin-top: 30px; font: 400 18px/1.85 ui-monospace, "SF Mono", Menlo, monospace;
+    background: #161b22; border: 1px solid #30363d; border-left: 3px solid #f0883e;
+    border-radius: 10px; padding: 16px 22px; white-space: nowrap; }
+  .term .x { color: #ff7b72; } .term .w { color: #d29922; }
+  .term .p { color: #8b949e; } .term .g { color: #3fb950; }
+  .foot { margin-top: auto; display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 19px; color: #6e7681; padding-top: 26px; }
+  .foot b { color: #a6b1bd; font-weight: 600; }
+</style>
+<div class="glow"></div>
+<h1>driftlint<span class="dot">.</span></h1>
+<div class="tag">Your CLAUDE.md is lying to your agent.</div>
+<div class="sub">A linter for agent context files — dead paths, removed commands, invisible skills, CLAUDE.md&nbsp;↔&nbsp;AGENTS.md drift.</div>
+<div class="term">
+  <span class="p">$</span> npx @alifurkangokce/driftlint<br>
+  <span class="x">✗</span> <span class="p">[dead-path]</span> CLAUDE.md:14 <span class="w">`src/auth.ts`</span> does not exist <span class="p">↳ did you mean `src/authn.ts`?</span><br>
+  <span class="x">✗</span> <span class="p">[twin-drift]</span> AGENTS.md — command claims differ from CLAUDE.md<br>
+  <span class="g">✓</span> <span class="p">context freshness: 82%</span>
+</div>
+<div class="foot"><span><b>zero</b> runtime dependencies · <b>no</b> API key · <b>no</b> telemetry · MIT</span><span>github.com/alifurkangokce/driftlint</span></div>

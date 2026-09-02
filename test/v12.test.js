@@ -86,6 +86,78 @@ test("dead-link: links inside fences and driftlint-ignore lines are skipped", ()
   assert.deepEqual(links(dir), []);
 });
 
+test("dead-link: reference usages resolve once and report definition lines", () => {
+  const dir = tmp({
+    "CLAUDE.md": [
+      "# App",
+      "[readme]: README.md",
+      "",
+      "See [readme][], [deploy][ DePloY ], [architecture][arch], and ![removed][gone] plus [again][gone].",
+      "The generated report will be created at [report][report].",
+      "",
+      "[deploy]: docs/deploy.md#staging",
+      "[arch]: docs/architecture.md#components",
+      "[gone]: docs/gone.png",
+      "[gone]: README.md",
+      "[report]: docs/report.md",
+    ].join("\n"),
+    "README.md": "# Readme\n",
+    "docs/deploy.md": "# Deploy\n\n## Staging\n",
+    "docs/architecture.md": "# Architecture\n\n## Components\n",
+  });
+  const found = links(dir);
+  assert.equal(found.length, 1, "repeated usages share the first definition");
+  assert.equal(found[0].line, 9, "the editable definition owns the finding");
+  assert.match(found[0].message, /`docs\/gone\.png` does not exist/);
+});
+
+test("dead-link: unused, undefined, fenced, ignored, and non-repo references stay silent", () => {
+  const dir = tmp({
+    "CLAUDE.md": [
+      "# App",
+      "",
+      "[undefined][missing] [external][external] [absolute][absolute] [template][template] [placeholder][placeholder]",
+      "[ignored][ignored] <!-- driftlint-ignore -->",
+      "[hidden][hidden] has its definition only in a fence.",
+      "[inline](README.md \"[title][title]\") and \\[escaped][escaped] stay inline or escaped.",
+      "",
+      "```md",
+      "[fenced][fenced]",
+      "[hidden]: docs/hidden.md",
+      "```",
+      "",
+      "[external]: <https://example.com/docs>",
+      "[absolute]: /docs/absolute.md",
+      "[template]: docs/{name}.md",
+      "[placeholder]: path/to/file.md",
+      "[ignored]: docs/ignored.md",
+      "[fenced]: docs/fenced.md",
+      "[title]: docs/title.md",
+      "[escaped]: docs/escaped.md",
+      "[unused]: docs/unused.md",
+    ].join("\n"),
+    "README.md": "# Readme\n",
+  });
+  assert.deepEqual(links(dir), []);
+});
+
+test("dead-link: reference findings omit ambiguous auto-fixes", () => {
+  const dir = tmp({
+    "CLAUDE.md": [
+      "# App",
+      "",
+      "See [missing][docs/missing.md].",
+      "",
+      "[docs/missing.md]: docs/missing.md",
+    ].join("\n"),
+    "guides/missing.md": "# Found\n",
+  });
+  const found = links(dir);
+  assert.equal(found.length, 1);
+  assert.match(found[0].hint, /guides\/missing\.md/);
+  assert.equal(found[0].fix, undefined);
+});
+
 test("dead-link: memory audit validates MEMORY.md index pointers", () => {
   const repo = tmp({ "src/app.ts": "export {};\n" });
   const memory = tmp({

@@ -34,7 +34,7 @@ export function walk(root: string): WalkEntry[] {
       const abs = path.join(dir, d.name);
       const rel = path.relative(root, abs).split(path.sep).join("/");
       if (d.isDirectory()) {
-        if (IGNORED_DIRS.has(d.name) || d.name.startsWith(".git")) continue;
+        if (IGNORED_DIRS.has(d.name)) continue;
         entries.push({ rel, isDir: true });
         count++;
         visit(abs, depth + 1);

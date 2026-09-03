@@ -1,5 +1,10 @@
 # Changelog
 
+## mcp 0.1.3 — 2026-09-02
+
+- **The MCP server was installing a stale engine.** The published `driftlint-mcp@0.1.2` pinned `^0.12.0`, which on 0.x semver means `>=0.12.0 <0.13.0` — so `npx @alifurkangokce/driftlint-mcp` ran a two-release-old scanner with no twins, silent-config or dead-config-ref rules. The pin is now a floor (`>=0.14.1 <1.0.0`) instead of a ceiling that goes stale every minor.
+- A packaging test now fails the build when the pin stops covering the engine version this repo ships, so it can't happen quietly again.
+
 ## 0.14.1 — 2026-09-02
 
 Polish from installing it globally and using it like a first-time user.

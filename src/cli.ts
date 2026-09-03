@@ -234,7 +234,10 @@ async function main(): Promise<void> {
   }
 
   if (parsed.badgeJsonPath) {
-    fs.writeFileSync(parsed.badgeJsonPath, `${JSON.stringify(badgeJson(result.stats.score))}\n`);
+    fs.writeFileSync(
+      parsed.badgeJsonPath,
+      `${JSON.stringify(badgeJson(result.stats.score, result.stats.refsChecked))}\n`,
+    );
     console.error(`driftlint: badge JSON written to ${parsed.badgeJsonPath} (score ${result.stats.score}%)`);
   }
 

@@ -1,3 +1,4 @@
+import { MIN_SCORED_REFS } from "./badge.js";
 import type { Finding, ScanResult, Severity } from "./types.js";
 
 const useColor = process.stdout.isTTY && !process.env["NO_COLOR"];
@@ -48,7 +49,7 @@ export function printReport(result: ScanResult): void {
   console.log(
     `${bold("driftlint:")} ${parts.join(", ")} across ${result.contextFiles.length} context file${result.contextFiles.length === 1 ? "" : "s"}`,
   );
-  if (result.stats.refsChecked > 0) {
+  if (result.stats.refsChecked >= MIN_SCORED_REFS) {
     console.log(
       dim(`context freshness: ${result.stats.score}% (${result.stats.refsChecked - result.stats.refsBroken}/${result.stats.refsChecked} path references resolve)`),
     );

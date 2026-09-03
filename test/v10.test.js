@@ -115,8 +115,12 @@ test("untracked-context: uncommitted and gitignored context files warn; CLAUDE.l
     "CLAUDE.local.md": "# Personal scratch\n\nMy own reminders.\n",
     ".gitignore": ".windsurfrules\n",
     ".windsurfrules": "personal windsurf rules\n",
+    "README.md": "# repo\n",
   });
   git(dir, "init", "-q");
+  // the rule stays quiet until the repo has history — commit something first
+  git(dir, "add", "README.md", ".gitignore");
+  git(dir, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "init");
 
   let findings = scan(dir).findings.filter((f) => f.rule === "untracked-context");
   const byFile = new Map(findings.map((f) => [f.file, f]));

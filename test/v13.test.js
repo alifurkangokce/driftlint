@@ -3,7 +3,9 @@ import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { execFileSync } from "node:child_process";
 import { scan } from "../dist/scan.js";
+import { badgeJson } from "../dist/badge.js";
 
 function tmp(files = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "driftlint-v13-"));
@@ -205,4 +207,51 @@ test("skill-budget: description + when_to_use past 1,536 chars warns about trunc
   assert.equal(found.length, 1);
   assert.equal(found[0].file, ".claude/skills/big/SKILL.md");
   assert.match(found[0].message, /1,?536/);
+});
+
+// --- polish found by installing globally and using it like a new user ---
+
+test("score: a handful of references is not a percentage worth publishing", () => {
+  const dir = tmp({ "CLAUDE.md": "# App\n\nEntry: `src/gone.ts`\n" });
+  const result = scan(dir);
+  assert.ok(result.stats.refsChecked < 5, "fixture must be a small sample");
+  assert.deepEqual(badgeJson(result.stats.score, result.stats.refsChecked), {
+    schemaVersion: 1,
+    label: "context freshness",
+    message: "n/a",
+    color: "lightgrey",
+  });
+  // a real sample still scores
+  assert.equal(badgeJson(100, 12).message, "100%");
+  assert.equal(badgeJson(100).message, "100%", "callers without a sample size keep the old behaviour");
+});
+
+test("untracked-context: a repo with no commits yet is somebody's first five minutes", () => {
+  const dir = tmp({ "CLAUDE.md": "# Notes\n\nGuidance for this service.\n" });
+  execFileSync("git", ["-C", dir, "init", "-q"]);
+  assert.deepEqual(scan(dir).findings.filter((f) => f.rule === "untracked-context"), []);
+
+  execFileSync("git", ["-C", dir, "add", "CLAUDE.md"]);
+  execFileSync("git", ["-C", dir, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "init"]);
+  fs.writeFileSync(path.join(dir, "AGENTS.md"), "# Rules\n\nOther guidance.\n");
+  const found = scan(dir).findings.filter((f) => f.rule === "untracked-context");
+  assert.equal(found.length, 1, "once there is history, an uncommitted context file is real news");
+  assert.equal(found[0].file, "AGENTS.md");
+});
+
+test("untracked-context: the personal-file hint only names CLAUDE.local.md for CLAUDE.md", () => {
+  const dir = tmp({
+    "CLAUDE.md": "# Notes\n\nGuidance.\n",
+    ".opencode/knowledge/notes.md": "# Knowledge\n\nFacts.\n",
+    ".gitignore": "CLAUDE.md\n.opencode/\n",
+    "README.md": "# repo\n",
+  });
+  execFileSync("git", ["-C", dir, "init", "-q"]);
+  execFileSync("git", ["-C", dir, "add", "README.md", ".gitignore"]);
+  execFileSync("git", ["-C", dir, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "init"]);
+  const byFile = new Map(
+    scan(dir).findings.filter((f) => f.rule === "untracked-context").map((f) => [f.file, f]),
+  );
+  assert.match(byFile.get("CLAUDE.md")?.hint ?? "", /CLAUDE\.local\.md/);
+  assert.doesNotMatch(byFile.get(".opencode/knowledge/notes.md")?.hint ?? "x", /CLAUDE\.local\.md/);
 });

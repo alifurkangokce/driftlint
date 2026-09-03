@@ -17,6 +17,9 @@ export function checkUntrackedContext(root: string, files: ContextFile[]): Findi
 
   const inRepo = git(root, ["rev-parse", "--is-inside-work-tree"]);
   if (inRepo === null || !inRepo.startsWith("true")) return [];
+  // a repo with no commits yet is somebody's first five minutes, not a team
+  // that has drifted apart — every file is "untracked" and none of it is news
+  if (git(root, ["rev-parse", "--verify", "HEAD"]) === null) return [];
 
   const ls = git(root, ["ls-files", "-z", "--", ...candidates.map((f) => f.path)]);
   if (ls === null) return [];
@@ -43,9 +46,16 @@ export function checkUntrackedContext(root: string, files: ContextFile[]): Findi
       ? "gitignored — agents on this machine follow it, but teammates and CI never see it."
       : "not committed — agents on this machine follow it, but teammates and CI never see it.",
     hint: ignored.has(f.path)
-      ? 'if it is intentionally personal, rename it to CLAUDE.local.md or add it to "ignore" in .driftlintrc.json.'
+      ? personalHint(f.path)
       : "commit it so every developer's agent works from the same context.",
   }));
+}
+
+/** CLAUDE.md has a documented personal variant; other context files don't. */
+function personalHint(rel: string): string {
+  return /(^|\/)CLAUDE\.md$/.test(rel)
+    ? 'if it is intentionally personal, rename it to CLAUDE.local.md or add it to "ignore" in .driftlintrc.json.'
+    : 'if it is intentionally personal, add it to "ignore" in .driftlintrc.json.';
 }
 
 function git(root: string, args: string[]): string | null {

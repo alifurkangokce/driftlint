@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.14.1 — 2026-09-02
+
+Polish from installing it globally and using it like a first-time user.
+
+- **The freshness score no longer publishes a percentage from a handful of references.** A repo with 3 checked references could swing from 100% to 0% on one moved file; below 5 references the report omits the line and `--badge-json` writes `n/a` (grey) instead of a red `0%`.
+- **`untracked-context` stays quiet in a repo with no commits yet** — every file is untracked in somebody's first five minutes, and none of it is news.
+- **The personal-file hint stopped suggesting `CLAUDE.local.md` for files that have no such variant** (`.opencode/knowledge/*.md`, `.windsurfrules`, …); those now point at the `ignore` config instead.
+- 77-test suite.
+
 ## 0.14.0 — 2026-09-02
 
 The first outside contribution — thank you [@LunaMeerkats](https://github.com/LunaMeerkats).

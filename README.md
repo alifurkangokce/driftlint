@@ -245,23 +245,24 @@ driftlint also ships as a Claude Code plugin: a `/driftlint` command that runs t
 
 | | **driftlint** | agnix | reporails | ctxlint / agents-lint | claude-mem etc. |
 |---|---|---|---|---|---|
-| Checks context files against the **actual codebase** (dead paths, dead commands, staleness) | ✅ | ❌ structural rules only | ❌ [explicitly out of scope](https://github.com/reporails/cli) | ✅ | ❌ |
-| Will it actually load? (32 KB concatenated AGENTS.md, 1,536-char skill listing, `.cursor/rules/*.md`) | ✅ | partial | ❌ | ❌ | ❌ |
-| CLAUDE.md ↔ AGENTS.md drift + CI mirror gate | ✅ | ❌ | ❌ | ❌ | ❌ |
-| PR-first: baseline mode, SARIF annotations, workspace-aware commands | ✅ | partial | partial | partial | ❌ |
-| **Reviewed team memory** (agent proposes → human approves → synced & re-verified) | ✅ | ❌ | ❌ | ❌ | ❌ auto-capture, no review |
-| Writing quality of the instructions themselves (clarity, structure, a 0–10 score) | ❌ by design | partial | ✅ 120+ rules | ❌ | ❌ |
-| Structural/spec rules, LSP, IDE plugins | ❌ by design | ✅ 454 rules | ❌ | partial | ❌ |
-| Runs fully offline, no account, no network | ✅ | ✅ | ❌ sign-in unlocks fix text and exact locations | ✅ | varies |
+| Referenced paths, scripts and links **verified against the tree** | ✅ | ❌ structural only | ❌ [documented as out of scope](https://github.com/reporails/cli) | ✅ | ❌ |
+| Hard vendor limits that truncate silently (Codex's concatenated 32 KB, the 1,536-char skill listing, `.cursor/rules/*.md` never loading) | ✅ | partial | ✅ per-agent caps, plus a 100 KB advisory aggregate (`CORE:E:0001`) | ❌ | ❌ |
+| Memory files | ✅ contents verified against the repo — dead refs, broken `[[links]]`, MEMORY.md past the load fold | ❌ | ✅ structure and size rules (`CORE:S:0023`) | ❌ | ❌ it *is* the memory store |
+| **Reviewed Memory workflow** (agent proposes → human approves → synced → re-verified) | ✅ | ❌ | ❌ | ❌ | ❌ auto-capture, no review |
+| CLAUDE.md ↔ AGENTS.md drift + a CI mirror gate | ✅ mechanical diff + `twins --check` | ❌ | partial — cross-agent conflict rules (`CORE:C:0026`, `CORE:C:0046`) | ❌ | ❌ |
+| Instruction surfaces covered | project scope, nested dirs | broad | broadest — project, user and system scope | narrow | — |
+| How well the instructions are *written* (clarity, structure, a 0–10 score) | ❌ by design | partial | ✅ 120+ rules | ❌ | ❌ |
+| Structural / spec conformance, LSP, IDE plugins | ❌ by design | ✅ 454 rules | partial | partial | ❌ |
+| Runs fully offline, no account | ✅ | ✅ | ❌ sign-in unlocks fix text and exact locations | ✅ | varies |
 | License | MIT | MIT | BUSL 1.1 (Apache 2.0 after 3 years) | MIT | varies |
 
-These tools answer different questions and stack cleanly:
+The overlap is real and growing, so here is the honest split:
 
-- [agnix](https://github.com/agent-sh/agnix) checks that your context files are **well-formed** — schema and spec compliance.
-- [reporails](https://github.com/reporails/cli) grades how **well-written** they are — directive clarity, structure, a quality score.
-- driftlint checks whether they are **still true** — every claim resolved against the code, and whether the file reaches the model at all.
+- [agnix](https://github.com/agent-sh/agnix) checks that your files are **well-formed** — schema and spec conformance, with an LSP and IDE plugins.
+- [reporails](https://github.com/reporails/cli) checks how they are **written and organised** — clarity, structure, size ceilings, memory and rule surfaces across project, user and system scope.
+- driftlint checks whether they are **still true** — every path, script, link and config reference resolved against the actual tree, and a review workflow for the knowledge agents add.
 
-Run whichever combination fits, the way you run eslint next to tsc.
+The last one is the part nobody else claims: a file can be perfectly formed, well written, correctly sized, and still tell your agent to run a script someone deleted in March.
 
 ## Roadmap
 

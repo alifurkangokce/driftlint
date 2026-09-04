@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.15.1 — 2026-09-04
+
+Reported on r/ClaudeCode, and the reporter was right.
+
+- **`load-budget` measured the wrong thing.** Codex truncates the *concatenated* instruction set at 32 KB, not each file separately — so a root `AGENTS.md` and two nested ones at 12 KB apiece all pass individually and still lose 4 KB off the end together. The check now also sums the AGENTS.md files it can see and reports one combined finding, naming the largest contributors. A single oversized file keeps its own finding instead of being reported twice, and the hint notes what this scan can't see: only the files on the path to the working directory are concatenated, and a global `~/.codex/AGENTS.md` counts toward the same budget.
+- Verified while answering the same thread: a symlinked `CLAUDE.md → AGENTS.md` — the long-established fix for the two-file problem — produces zero findings, because the walker never treats the symlink as a second file.
+- 93-test suite.
+
 ## 0.15.0 — 2026-09-03
 
 A precision-and-crash pass. Every item here came from [@cemililik](https://github.com/cemililik), who read the source and filed eleven issues with file:line diagnoses — one of them with the fix attached.

@@ -208,3 +208,31 @@ test("dead-link strips query strings before resolving", () => {
   assert.equal(found.length, 1, "only the genuinely missing target is reported");
   assert.match(found[0].message, /docs\/gone\.md/);
 });
+
+// Reported on r/ClaudeCode: Codex truncates the *concatenated* instruction set,
+// so per-file checks understate the risk.
+test("load-budget catches AGENTS.md files that only blow the 32KB limit together", () => {
+  const chunk = (kb) => `# Rules\n\n${"Some perfectly ordinary sentence about the project. ".repeat(kb * 20)}`;
+  const dir = tmp({
+    "AGENTS.md": chunk(12),
+    "packages/api/AGENTS.md": chunk(12),
+    "packages/web/AGENTS.md": chunk(12),
+  });
+  const found = scan(dir).findings.filter((f) => f.rule === "load-budget");
+  assert.equal(found.length, 1, "one combined finding, not one per file");
+  assert.equal(found[0].file, "AGENTS.md", "reported on the root file");
+  assert.match(found[0].message, /concatenates/);
+  assert.match(found[0].hint, /global ~\/\.codex\/AGENTS\.md/);
+});
+
+test("load-budget: files that fit together stay silent, and a single oversized file is not double-reported", () => {
+  const small = "# Rules\n\nKeep it short.\n";
+  const fits = tmp({ "AGENTS.md": small, "packages/api/AGENTS.md": small });
+  assert.deepEqual(scan(fits).findings.filter((f) => f.rule === "load-budget"), []);
+
+  const huge = `# Rules\n\n${"Some perfectly ordinary sentence about the project. ".repeat(800)}`;
+  const over = tmp({ "AGENTS.md": huge, "packages/api/AGENTS.md": small });
+  const found = scan(over).findings.filter((f) => f.rule === "load-budget");
+  assert.equal(found.length, 1, "the per-file finding is enough");
+  assert.match(found[0].message, /silently truncates at 32 KB/);
+});

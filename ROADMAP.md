@@ -73,6 +73,10 @@ A linter's only capital is trust, so every release prioritizes precision before 
 
 - Reference-style link support (community contribution, #9) + `ALL_CAPS` placeholder suppression
 
+## v0.15 — precision & crash pass ✅ shipped in 0.15.0
+
+- Ten reported bugs and false positives fixed, from a community source review — crash on unreadable Makefile, `--fix` bad write, `.github` never walked, yarn built-ins, LICENSE-style exemptions, fenced bullets, `.cursor/rules/README.md`, loose-list rationale, query strings, scoped script names, `--llm` ignore globs
+
 ## Later, on demand
 
 - VS Code extension (in-process library, markdownlint model) · sandboxed dry-run of documented commands · org-wide scanning

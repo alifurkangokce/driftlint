@@ -38,7 +38,11 @@ export function extractRefs(file: ContextFile): { paths: PathRef[]; commands: Co
     }
     for (const m of codeText.matchAll(/\byarn\s+(?:run\s+)?([A-Za-z0-9:_.-]+)/g)) {
       const name = m[1];
-      const builtins = new Set(["install", "add", "remove", "init", "dlx", "create", "up", "why", "info", "workspaces"]);
+      // `yarn foo` is shorthand for a script, but it is also how every yarn
+      // built-in is invoked — reporting those as missing scripts fails a yarn
+      // repo on its first run. Ambiguous names (publish, version) stay out:
+      // a missed finding beats a false error.
+      const builtins = YARN_BUILTINS;
       if (name && !builtins.has(name) && !seenCmd.has(`npm:${name}:${i}`)) {
         seenCmd.add(`npm:${name}:${i}`);
         commands.push({ kind: "npm-script", name, line: i + 1, ...(cwd ? { cwd } : {}) });
@@ -86,6 +90,16 @@ export function extractRefs(file: ContextFile): { paths: PathRef[]; commands: Co
   }
   return { paths, commands };
 }
+
+const YARN_BUILTINS = new Set([
+  "install", "add", "remove", "init", "dlx", "create", "up", "why", "info",
+  "workspaces", "workspace", "audit", "outdated", "upgrade", "upgrade-interactive",
+  "cache", "config", "dedupe", "exec", "explain", "global", "licenses", "link",
+  "unlink", "list", "node", "npm", "pack", "patch", "patch-commit", "plugin",
+  "publish", "rebuild", "set", "stage", "unplug", "version", "versions", "bin",
+  "constraints", "import", "policies", "autoclean", "login", "logout", "owner",
+  "tag", "team", "help", "search", "generate-lock-entry",
+]);
 
 export interface LinkRef {
   /** Link target path, "" for a same-file `#anchor` link. */
@@ -194,8 +208,12 @@ function parseLinkTarget(
   ) return null;
   if (/[<>{}$*|`\\]/.test(targetWithAnchor)) return null;
   const hash = targetWithAnchor.indexOf("#");
-  const target = hash === -1 ? targetWithAnchor : targetWithAnchor.slice(0, hash);
+  const beforeHash = hash === -1 ? targetWithAnchor : targetWithAnchor.slice(0, hash);
   const anchor = hash === -1 ? undefined : targetWithAnchor.slice(hash + 1).trim();
+  // `?plain=1`, `?raw=true`, `?utm_source=…` are view/tracking parameters on a
+  // real file, not part of its name
+  const query = beforeHash.indexOf("?");
+  const target = query === -1 ? beforeHash : beforeHash.slice(0, query);
   if (!target && !anchor) return null;
   if (/(^|\/)path\/to(\/|$)/.test(target)) return null;
   return { target, ...(anchor ? { anchor } : {}), line };

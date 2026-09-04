@@ -15,6 +15,12 @@ export interface TwinInput {
   commands: CommandRef[];
 }
 
+/** Keys are `kind:name`; a scoped script like `test:unit` has colons of its
+ *  own, so only the first one separates the kind. */
+function scriptName(key: string): string {
+  return key.slice(key.indexOf(":") + 1);
+}
+
 /** Near-duplicate detection: share of the smaller file's lines found in the other. */
 const NEAR_DUP_OVERLAP = 0.5;
 const MAX_EXAMPLES = 2;
@@ -78,7 +84,7 @@ function checkPair(claude: TwinInput, agents: TwinInput): Finding[] {
   if (cmdA.size > 0 && cmdB.size > 0 && (cmdOnlyA.length > 0 || cmdOnlyB.length > 0)) {
     const show = (list: string[], name: string) =>
       list.length
-        ? `\`${list.slice(0, MAX_EXAMPLES).map((c) => c.split(":")[1]).join("\`, \`")}\`${list.length > MAX_EXAMPLES ? ` +${list.length - MAX_EXAMPLES}` : ""} only in ${name}`
+        ? `\`${list.slice(0, MAX_EXAMPLES).map(scriptName).join("\`, \`")}\`${list.length > MAX_EXAMPLES ? ` +${list.length - MAX_EXAMPLES}` : ""} only in ${name}`
         : "";
     clauses.push(
       ["command claims differ: ", [show(cmdOnlyA, "CLAUDE.md"), show(cmdOnlyB, "AGENTS.md")].filter(Boolean).join("; ")].join(""),

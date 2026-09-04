@@ -210,9 +210,13 @@ export async function runLlmPass(
     .sort((a, b) => rank(a) - rank(b))
     .slice(0, MAX_FILES);
 
+  // `ignore` is how the README tells people to exclude paths, so it has to
+  // cover the evidence pool too: an archived file both skews the verdict and
+  // leaves the machine inside the prompt.
   const evidenceFiles = entries
     .filter((e) => !e.isDir && isTextCandidate(e.rel))
     .map((e) => e.rel)
+    .filter((rel) => !ignoreRes.some((r) => r.test(rel)))
     .slice(0, MAX_EVIDENCE_FILES);
   const evidenceCache = new Map<string, string[] | null>();
 

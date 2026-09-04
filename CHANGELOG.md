@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.15.0 — 2026-09-03
+
+A precision-and-crash pass. Every item here came from [@cemililik](https://github.com/cemililik), who read the source and filed eleven issues with file:line diagnoses — one of them with the fix attached.
+
+**Crashes and bad writes**
+
+- An unreadable `Makefile` (EACCES, or gone between the walk and the read) took the whole scan down with an unhandled exception; the `package.json` branch four lines up was already guarded (#14).
+- `--fix` wrote replacements through a string pattern, so `$$`, `$&`, `` $` `` and `$'` in a path spliced surrounding text into the user's context file instead of the text we showed them (#13).
+- `.github/` was never walked, which left `copilot-instructions.md` unreachable since the day it shipped — advertised in the README, typed, wired up, and dead (#11, fixed in #12).
+
+**False positives**
+
+- `yarn audit`, `yarn outdated`, `yarn workspace …` and the rest of yarn's built-ins were reported as missing package scripts, failing a yarn repo on its first run (#18).
+- `LICENSE`, `CHANGELOG`, `CODEOWNERS` and friends were permanently exempt from link and path checks, because the ALL-CAPS placeholder guard swallowed them (#16).
+- `load-budget` counted bullet lines inside fenced code blocks, turning a 170-line YAML example into an adherence warning (#19).
+- `silent-config` flagged `.cursor/rules/README.md` — documentation about the rules, not a rule that failed to load — as an error, so `npx driftlint` exited 1 on a repo that had done nothing wrong (#20).
+- `missing-rationale` only read the line after a directive, missing every reason written as a markdown loose list (bullet, blank line, indented paragraph) (#21).
+- `dead-link` did not strip query strings, so `docs/x.md?plain=1` was reported as missing (#22).
+
+**Correctness**
+
+- `twin-drift` truncated scoped script names, naming `test` when the script is `test:unit` (#15).
+- `--llm` applied the config `ignore` globs to the linted files but not to the evidence pool, so an excluded path was still grepped and pasted into the prompt (#17).
+
+91-test suite; the two highest-severity regressions were verified to fail without their fix.
+
 ## mcp 0.1.3 — 2026-09-02
 
 - **The MCP server was installing a stale engine.** The published `driftlint-mcp@0.1.2` pinned `^0.12.0`, which on 0.x semver means `>=0.12.0 <0.13.0` — so `npx @alifurkangokce/driftlint-mcp` ran a two-release-old scanner with no twins, silent-config or dead-config-ref rules. The pin is now a floor (`>=0.14.1 <1.0.0`) instead of a ceiling that goes stale every minor.

@@ -12,6 +12,25 @@ const RATIONALE = /\b(because|so that|otherwise|since|to (?:avoid|prevent|keep|e
 const MAIN_KINDS = new Set(["claude-md", "agents-md", "gemini"]);
 const MIN_DIRECTIVES = 5;
 const MISSING_RATIO = 0.8;
+const CONTINUATION_LINES = 4;
+
+/** In a markdown loose list the reason lives in the indented paragraph under
+ *  the bullet, separated by a blank line — read the whole continuation, not
+ *  just the next line. */
+function continuationOf(lines: string[], i: number): string {
+  const indent = /^(\s*)/.exec(lines[i] ?? "")?.[1]?.length ?? 0;
+  const out: string[] = [];
+  for (let j = i + 1; j < lines.length && out.length < CONTINUATION_LINES; j++) {
+    const line = lines[j] ?? "";
+    if (/^\s*(```|~~~)/.test(line)) break;
+    if (line.trim() === "") continue;
+    const lineIndent = /^(\s*)/.exec(line)?.[1]?.length ?? 0;
+    // a new bullet at the same level, or unindented prose, ends this item
+    if (lineIndent <= indent) break;
+    out.push(line);
+  }
+  return out.join(" ");
+}
 
 export function checkRationale(files: ContextFile[]): Finding[] {
   const findings: Finding[] = [];
@@ -28,8 +47,7 @@ export function checkRationale(files: ContextFile[]): Finding[] {
       }
       if (inFence || !/^\s*([-*+]\s|\d+\.\s)/.test(line) || !STRONG_DIRECTIVE.test(line)) continue;
       directives++;
-      const next = file.lines[i + 1] ?? "";
-      if (!RATIONALE.test(line) && !RATIONALE.test(next)) missing++;
+      if (!RATIONALE.test(line) && !RATIONALE.test(continuationOf(file.lines, i))) missing++;
     }
     if (directives >= MIN_DIRECTIVES && missing / directives >= MISSING_RATIO) {
       findings.push({

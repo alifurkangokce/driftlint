@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ContextFile, Finding, PathRef, RepoIndex } from "../types.js";
+import { KNOWN_META_FILES } from "./metaFiles.js";
 
 const BUILD_DIRS = new Set([
   "node_modules", "dist", "build", "builddir", "out", "coverage", "target",
@@ -69,9 +70,16 @@ export function checkDeadPaths(
     // segments mark templates ("internal/impl/foo/input.go") — neither is drift
     if (segments.some((s) => BUILD_DIRS.has(s) || PLACEHOLDER_SEGMENTS.has(s.toLowerCase()))) continue;
     if (/(^|\/)path\/to(\/|$)/.test(rel)) continue;
-    // date/pattern placeholders (`YYYYMM/`, `Memory/YYYYMMDD-update/`) and
-    // all-caps template segments (`PROTOTYPE.md`) are patterns, not paths
-    if (segments.some((s) => s.startsWith("YYYY") || (!s.includes(".") && /^[A-Z][A-Z0-9_-]+$/.test(s)))) continue;
+    // date placeholders (`YYYYMM/`) and ALL-CAPS template segments
+    // (`TEMPLATE/x.md`) are patterns, not paths — except the ALL-CAPS names
+    // that are real files, where a broken reference is a real finding.
+    if (
+      segments.some(
+        (s) =>
+          s.startsWith("YYYY") ||
+          (!s.includes(".") && /^[A-Z][A-Z0-9_-]+$/.test(s) && !KNOWN_META_FILES.has(s)),
+      )
+    ) continue;
     // lines describing runtime artifacts aren't claims that the path exists NOW
     const srcLine = file.lines[ref.line - 1] ?? "";
     if (/creat(e|ed|es|ing)|written to|will be|if (it )?(does ?n[o']t|doesn't) exist|\bgenerated\b|gitignored|\(optional\)|(cop(y|ies|ied|ying)|mov(e|es|ed|ing)|archiv(e|es|ed|ing)|renam(e|es|ed|ing))[^.]{0,60}\bto\b/i.test(srcLine)) continue;

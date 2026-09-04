@@ -2,6 +2,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { ContextFile, Finding, RepoIndex } from "../types.js";
 import type { LinkRef } from "../extract.js";
+import { KNOWN_META_FILES } from "./metaFiles.js";
 
 /**
  * Markdown links inside context files are instructions too: "the deployment
@@ -18,6 +19,10 @@ const BUILD_DIRS = new Set([
 const PLACEHOLDER_SEGMENTS = new Set([
   "foo", "bar", "baz", "qux", "myapp", "my-app", "your-app", "yourapp", "placeholder",
 ]);
+
+/** `TFS_LINK`, `YOUR_DOC_URL`, `TEMPLATE` — ALL-CAPS names an author is
+ *  expected to replace, minus the ones that are real files. */
+const ALL_CAPS_TARGET = /^[A-Z][A-Z0-9_]*$/;
 
 /** Line-number anchors (`#L42`, `#L10-L20`) are a code-host feature, not a heading. */
 const LINE_ANCHOR = /^L\d+(?:-L?\d+)?$/;
@@ -38,8 +43,9 @@ export function checkLinks(
     if (sourceLines.every((line) => FUTURE_ARTIFACT_LINE.test(file.lines[line - 1] ?? ""))) continue;
 
     // fill-in markers ("see the ticket at [details](TFS_LINK)") are placeholders
-    // an author is expected to replace, not claims that a file exists
-    if (/^[A-Z][A-Z0-9_]*$/.test(link.target)) continue;
+    // an author is expected to replace — but LICENSE, CHANGELOG and CODEOWNERS
+    // are ALL CAPS too, and a broken link to one of those is a real finding.
+    if (ALL_CAPS_TARGET.test(link.target) && !KNOWN_META_FILES.has(link.target)) continue;
 
     const rel = link.target ? path.posix.normalize(path.posix.join(fileDir === "." ? "" : fileDir, link.target)) : file.path;
     if (rel.startsWith("..")) continue; // escapes the scanned root — not ours to verify

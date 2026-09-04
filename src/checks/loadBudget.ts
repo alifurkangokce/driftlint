@@ -42,7 +42,7 @@ export function checkLoadBudget(files: ContextFile[]): Finding[] {
       }
     }
 
-    const instructionish = file.lines.filter((l) => /^\s*([-*+]\s|\d+\.\s)/.test(l)).length;
+    const instructionish = countInstructionLines(file.lines);
     if (instructionish > INSTRUCTION_SOFT_LIMIT) {
       findings.push({
         rule: "load-budget",
@@ -55,4 +55,19 @@ export function checkLoadBudget(files: ContextFile[]): Finding[] {
     }
   }
   return findings;
+}
+
+/** Bullets inside a fence are an example being shown to the model (a YAML
+ *  snippet, a sample config), not instructions it is asked to follow. */
+function countInstructionLines(lines: string[]): number {
+  let count = 0;
+  let inFence = false;
+  for (const line of lines) {
+    if (/^\s*(```|~~~)/.test(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (!inFence && /^\s*([-*+]\s|\d+\.\s)/.test(line)) count++;
+  }
+  return count;
 }

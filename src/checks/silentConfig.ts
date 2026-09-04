@@ -15,7 +15,8 @@ export function checkSilentConfig(entries: WalkEntry[]): Finding[] {
 
     // Cursor: project rules must be .mdc — a plain .md has nowhere to carry the
     // description/globs/alwaysApply frontmatter, so the rules system skips it.
-    if (/(^|\/)\.cursor\/rules\/.+\.md$/.test(e.rel)) {
+    // a README there documents the rules for humans; it was never meant to load
+    if (/(^|\/)\.cursor\/rules\/.+\.md$/.test(e.rel) && !/(^|\/)(README|CONTRIBUTING)\.md$/i.test(e.rel)) {
       findings.push({
         rule: "silent-config",
         severity: "error",

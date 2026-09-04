@@ -230,15 +230,25 @@ driftlint also ships as a Claude Code plugin: a `/driftlint` command that runs t
 
 ## How driftlint compares
 
-| | **driftlint** | agnix | ctxlint / agents-lint | claude-mem etc. |
-|---|---|---|---|---|
-| Checks context files against the **actual codebase** (dead paths, dead commands, staleness) | ✅ | ❌ structural rules only | ✅ | ❌ |
-| PR-first: baseline mode, SARIF annotations, workspace-aware commands | ✅ | partial | partial | ❌ |
-| Template-repo awareness (scaffold kits don't drown you in noise) | ✅ | ❌ | ❌ | ❌ |
-| **Reviewed team memory** (agent proposes → human approves → synced & re-verified) | ✅ | ❌ | ❌ | ❌ auto-capture, no review |
-| Structural/spec rules, LSP, IDE plugins | ❌ by design | ✅ 448 rules | partial | ❌ |
+| | **driftlint** | agnix | reporails | ctxlint / agents-lint | claude-mem etc. |
+|---|---|---|---|---|---|
+| Checks context files against the **actual codebase** (dead paths, dead commands, staleness) | ✅ | ❌ structural rules only | ❌ [explicitly out of scope](https://github.com/reporails/cli) | ✅ | ❌ |
+| Will it actually load? (32 KB concatenated AGENTS.md, 1,536-char skill listing, `.cursor/rules/*.md`) | ✅ | partial | ❌ | ❌ | ❌ |
+| CLAUDE.md ↔ AGENTS.md drift + CI mirror gate | ✅ | ❌ | ❌ | ❌ | ❌ |
+| PR-first: baseline mode, SARIF annotations, workspace-aware commands | ✅ | partial | partial | partial | ❌ |
+| **Reviewed team memory** (agent proposes → human approves → synced & re-verified) | ✅ | ❌ | ❌ | ❌ | ❌ auto-capture, no review |
+| Writing quality of the instructions themselves (clarity, structure, a 0–10 score) | ❌ by design | partial | ✅ 120+ rules | ❌ | ❌ |
+| Structural/spec rules, LSP, IDE plugins | ❌ by design | ✅ 454 rules | ❌ | partial | ❌ |
+| Runs fully offline, no account, no network | ✅ | ✅ | ❌ sign-in unlocks fix text and exact locations | ✅ | varies |
+| License | MIT | MIT | BUSL 1.1 (Apache 2.0 after 3 years) | MIT | varies |
 
-driftlint and [agnix](https://github.com/agent-sh/agnix) are complements, not rivals — agnix checks that your context files are *well-formed*; driftlint checks that they're *still true*. Run both, like eslint and tsc.
+These tools answer different questions and stack cleanly:
+
+- [agnix](https://github.com/agent-sh/agnix) checks that your context files are **well-formed** — schema and spec compliance.
+- [reporails](https://github.com/reporails/cli) grades how **well-written** they are — directive clarity, structure, a quality score.
+- driftlint checks whether they are **still true** — every claim resolved against the code, and whether the file reaches the model at all.
+
+Run whichever combination fits, the way you run eslint next to tsc.
 
 ## Roadmap
 

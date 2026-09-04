@@ -222,7 +222,7 @@ test("load-budget catches AGENTS.md files that only blow the 32KB limit together
   assert.equal(found.length, 1, "one combined finding, not one per file");
   assert.equal(found[0].file, "AGENTS.md", "reported on the root file");
   assert.match(found[0].message, /concatenates/);
-  assert.match(found[0].hint, /global ~\/\.codex\/AGENTS\.md/);
+  assert.match(found[0].hint, /user-level ~\/\.codex\/AGENTS\.md/);
 });
 
 test("load-budget: files that fit together stay silent, and a single oversized file is not double-reported", () => {

@@ -3,24 +3,51 @@ import * as path from "node:path";
 import type { ContextFile } from "./types.js";
 import type { WalkEntry } from "./fswalk.js";
 
+/**
+ * What each agent actually loads, as documented by the agents themselves.
+ * Patterns are nested by default: a rule in `.claude/agents/backend/api.md`
+ * is loaded exactly like one at the top of that directory, so a single-segment
+ * pattern silently misses half of a well-organised repo.
+ */
+const SURFACES: Array<[RegExp, ContextFile["kind"]]> = [
+  // root instruction files (nested AGENTS.md/CLAUDE.md are read by most agents)
+  [/(^|\/)CLAUDE\.(local\.)?md$/, "claude-md"],
+  [/(^|\/)AGENTS(\.override)?\.md$/, "agents-md"],
+  [/(^|\/)GEMINI\.md$/, "gemini"],
+
+  // Copilot
+  [/(^|\/)\.github\/copilot-instructions\.md$/, "copilot"],
+  [/(^|\/)\.github\/instructions\/.+\.instructions\.md$/, "copilot"],
+  [/(^|\/)\.github\/agents\/.+\.agent\.md$/, "subagent"],
+
+  // Agent Skills (agentskills.io): a cross-tool standard — Claude Code, Cursor,
+  // Codex and Copilot all load <name>/SKILL.md, several from each other's dirs
+  [/(^|\/)\.(claude|cursor|codex|gemini|github)\/skills\/.+\/SKILL\.md$/, "skill"],
+  [/(^|\/)\.agents\/skills\/.+\/SKILL\.md$/, "skill"],
+
+  // rule directories
+  [/(^|\/)\.claude\/rules\/.+\.md$/, "rule"],
+  [/(^|\/)\.codex\/rules\/.+\.rules$/, "rule"],
+  // Cursor only reads .mdc here; a plain .md never loads (see checkSilentConfig)
+  [/(^|\/)\.cursor\/rules\/.+\.mdc$/, "cursor-rule"],
+
+  // sub-agents and commands
+  [/(^|\/)\.(claude|cursor|gemini)\/agents\/.+\.md$/, "subagent"],
+  [/(^|\/)\.claude\/commands\/.+\.md$/, "command"],
+
+  // other CLIs
+  [/(^|\/)\.windsurfrules$/, "windsurf"],
+  [/(^|\/)\.clinerules$/, "cline"],
+  [/(^|\/)\.clinerules\/.+\.md$/, "cline"],
+  [/(^|\/)\.opencode\/(agent|command|knowledge)\/.+\.md$/, "opencode"],
+
+  [/(^|\/)\.agent-memory\/(approved|proposals)\/[^/]+\.md$/, "memory"],
+];
+
 function kindOf(rel: string): ContextFile["kind"] | null {
-  const base = rel.split("/").pop() ?? "";
-  if (base === "CLAUDE.md" || base === "CLAUDE.local.md") return "claude-md";
-  if (base === "AGENTS.md") return "agents-md";
-  if (rel === ".github/copilot-instructions.md") return "copilot";
-  // Agent Skills (agentskills.io) is a cross-tool standard now: Claude Code and
-  // Cursor both load <name>/SKILL.md, so the same budget/reference checks apply.
-  if (/(^|\/)\.(claude|cursor)\/skills\/[^/]+\/SKILL\.md$/.test(rel)) return "skill";
-  if (/(^|\/)\.claude\/agents\/[^/]+\.md$/.test(rel)) return "subagent";
-  if (/(^|\/)\.claude\/commands\/[^/]+\.md$/.test(rel)) return "command";
-  // Cursor only reads .mdc here; plain .md never loads (see checkSilentConfig)
-  if (/(^|\/)\.cursor\/rules\/[^/]+\.mdc$/.test(rel)) return "cursor-rule";
-  if (base === "GEMINI.md") return "gemini";
-  if (base === ".windsurfrules") return "windsurf";
-  if (base === ".clinerules") return "cline";
-  if (/(^|\/)\.clinerules\/[^/]+\.md$/.test(rel)) return "cline";
-  if (/(^|\/)\.opencode\/(agent|command|knowledge)\/.+\.md$/.test(rel)) return "opencode";
-  if (/(^|\/)\.agent-memory\/(approved|proposals)\/[^/]+\.md$/.test(rel)) return "memory";
+  for (const [pattern, kind] of SURFACES) {
+    if (pattern.test(rel)) return kind;
+  }
   return null;
 }
 

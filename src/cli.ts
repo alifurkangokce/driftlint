@@ -45,6 +45,8 @@ Options:
   --no-fail            always exit 0, even with errors
   --badge-json <path>  also write a shields.io endpoint-badge JSON with the 0-100
                        context-freshness score (share of path references that resolve)
+  --user-scope         also count ~/.codex/AGENTS.md and ~/.claude/CLAUDE.md toward the
+                       concatenated 32KB load budget (size only — content is never read)
   --skill-budget <n>   system-prompt char budget for skill descriptions (default 15000)
   --update-baseline    record current findings in .driftlint-baseline.json and exit;
                        later runs only report findings NOT in the baseline
@@ -87,6 +89,7 @@ interface Options {
   llm: boolean;
   llmModel?: string;
   skillBudget?: number;
+  userScope: boolean;
 }
 
 function parseArgs(argv: string[]): Options | "help" | "version" {
@@ -100,6 +103,7 @@ function parseArgs(argv: string[]): Options | "help" | "version" {
     fail: true,
     updateBaseline: false,
     llm: false,
+    userScope: false,
   };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
@@ -124,6 +128,7 @@ function parseArgs(argv: string[]): Options | "help" | "version" {
       }
       opts.badgeJsonPath = p;
     }
+    else if (a === "--user-scope") opts.userScope = true;
     else if (a === "--llm") opts.llm = true;
     else if (a === "--llm-model") {
       const m = argv[++i];
@@ -206,7 +211,7 @@ async function main(): Promise<void> {
       process.exit(2);
     }
   } else {
-    result = scan(root, { skillBudget: parsed.skillBudget });
+    result = scan(root, { skillBudget: parsed.skillBudget, userScope: parsed.userScope });
   }
 
   if (parsed.llm) {
@@ -246,7 +251,7 @@ async function main(): Promise<void> {
 
   if (parsed.fix) {
     const { applied, skipped } = await applyFixes(root, result.findings, { yes: parsed.yes });
-    result = scan(root, { skillBudget: parsed.skillBudget });
+    result = scan(root, { skillBudget: parsed.skillBudget, userScope: parsed.userScope });
     if (baseline) result.findings = applyBaseline(result.findings, baseline);
     printReport(result);
     console.log(

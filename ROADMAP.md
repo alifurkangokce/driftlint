@@ -77,6 +77,10 @@ A linter's only capital is trust, so every release prioritizes precision before 
 
 - Ten reported bugs and false positives fixed, from a community source review — crash on unreadable Makefile, `--fix` bad write, `.github` never walked, yarn built-ins, LICENSE-style exemptions, fenced bullets, `.cursor/rules/README.md`, loose-list rationale, query strings, scoped script names, `--llm` ignore globs
 
+## v0.16 — instruction surfaces ✅ shipped in 0.16.0
+
+- Nested rule/skill/agent directories, Copilot instruction files, Codex rules, cross-agent skills paths, `AGENTS.override.md` (#23) · opt-in `--user-scope` for the shared 32 KB budget (#24)
+
 ## Later, on demand
 
 - VS Code extension (in-process library, markdownlint model) · sandboxed dry-run of documented commands · org-wide scanning

@@ -40,6 +40,7 @@ export interface ContextFile {
     | "subagent"
     | "command"
     | "cursor-rule"
+    | "rule"
     | "copilot"
     | "gemini"
     | "windsurf"

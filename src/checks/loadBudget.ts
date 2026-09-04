@@ -18,7 +18,13 @@ const INSTRUCTION_SOFT_LIMIT = 150;
 
 const MAIN_KINDS = new Set(["claude-md", "agents-md", "gemini"]);
 
-export function checkLoadBudget(files: ContextFile[]): Finding[] {
+export interface UserScopeFile {
+  /** Display path, e.g. `~/.codex/AGENTS.md`. */
+  label: string;
+  bytes: number;
+}
+
+export function checkLoadBudget(files: ContextFile[], userScope: UserScopeFile[] = []): Finding[] {
   const findings: Finding[] = [];
   for (const file of files) {
     if (!MAIN_KINDS.has(file.kind)) continue;
@@ -57,18 +63,19 @@ export function checkLoadBudget(files: ContextFile[]): Finding[] {
       });
     }
   }
-  findings.push(...checkConcatenatedBudget(files));
+  findings.push(...checkConcatenatedBudget(files, userScope));
   return findings;
 }
 
 /** The per-file check misses the common case: a root AGENTS.md plus nested ones
  *  that are each comfortably under the limit and blow it once concatenated. */
-function checkConcatenatedBudget(files: ContextFile[]): Finding[] {
+function checkConcatenatedBudget(files: ContextFile[], userScope: UserScopeFile[]): Finding[] {
   const agents = files.filter((f) => f.kind === "agents-md");
-  if (agents.length < 2) return []; // the single-file case is already covered
+  if (agents.length + userScope.length < 2) return []; // the single-file case is already covered
 
   const sizes = agents
     .map((f) => ({ path: f.path, bytes: Buffer.byteLength(f.content, "utf8") }))
+    .concat(userScope.map((u) => ({ path: u.label, bytes: u.bytes })))
     .sort((a, b) => b.bytes - a.bytes);
   const total = sizes.reduce((a, f) => a + f.bytes, 0);
   if (total <= AGENTS_MD_LIMIT) return [];
@@ -83,8 +90,8 @@ function checkConcatenatedBudget(files: ContextFile[]): Finding[] {
       severity: "warning",
       file: root ?? sizes[0]?.path ?? "AGENTS.md",
       line: 0,
-      message: `${agents.length} AGENTS.md files total ${(total / 1024).toFixed(1)} KB — Codex concatenates the ones that apply and truncates the result at 32 KB, so ${((total - AGENTS_MD_LIMIT) / 1024).toFixed(1)} KB of it never reaches the model even though every file passes on its own.`,
-      hint: `largest: ${biggest.join(", ")}. Only the files on the path to the working directory are concatenated, so a deep file may be safe — and a global ~/.codex/AGENTS.md counts too but is outside this repo.`,
+      message: `${sizes.length} instruction files total ${(total / 1024).toFixed(1)} KB${userScope.length ? " (including user scope)" : ""} — Codex concatenates the ones that apply and truncates the result at 32 KB, so ${((total - AGENTS_MD_LIMIT) / 1024).toFixed(1)} KB of it never reaches the model even though every file passes on its own.`,
+      hint: `largest: ${biggest.join(", ")}. Only the files on the path to the working directory are concatenated, so a deep file may be safe.${userScope.length ? "" : " A user-level ~/.codex/AGENTS.md counts toward the same budget — pass --user-scope to include its size."}`,
     },
   ];
 }

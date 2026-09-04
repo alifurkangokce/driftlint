@@ -217,7 +217,20 @@ This mentions `hypothetical/example.ts` on purpose.
 
 ## Scanned files
 
-`CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md`, `GEMINI.md` (anywhere in the tree), `.claude/skills/*/SKILL.md`, `.claude/agents/*.md`, `.claude/commands/*.md`, `.cursor/rules/*`, `.github/copilot-instructions.md`, `.windsurfrules`, `.clinerules` (file or directory), `.opencode/{agent,command,knowledge}/**.md`.
+Everything an agent loads from the repo, nested directories included:
+
+| | |
+|---|---|
+| Root instructions | `CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md`, `AGENTS.override.md`, `GEMINI.md` — anywhere in the tree |
+| Rules | `.claude/rules/**/*.md`, `.cursor/rules/**/*.mdc`, `.codex/rules/**/*.rules`, `.clinerules` (file or directory), `.windsurfrules` |
+| Skills ([Agent Skills](https://agentskills.io)) | `.claude`, `.cursor`, `.codex`, `.gemini`, `.github` and `.agents` — all `skills/**/SKILL.md` |
+| Sub-agents & commands | `.claude/agents/**`, `.cursor/agents/**`, `.gemini/agents/**`, `.github/agents/*.agent.md`, `.claude/commands/**` |
+| Copilot | `.github/copilot-instructions.md`, `.github/instructions/**/*.instructions.md` |
+| Other | `.opencode/{agent,command,knowledge}/**`, `.agent-memory/**` |
+
+Machine-readable config is checked too (hooks, `.mcp.json`, plugin manifests) — see [Config that never loads](#config-that-never-loads).
+
+**User scope.** Codex and Claude Code also load an instruction file from your home directory, and it counts toward the same 32 KB budget as the repo's files. `--user-scope` folds `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md` into the total. It's off by default (CI has no such file, and reading someone's home directory during a repo lint should be a choice), and only the **size** is read — the content never enters a finding.
 
 ## Claude Code plugin
 

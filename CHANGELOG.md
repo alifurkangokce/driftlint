@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.16.0 — 2026-09-04
+
+Instruction surfaces. Prompted by a critique on r/codex that was right: the set of files this tool opened was narrower than the set agents actually load.
+
+- **Nested directories are no longer invisible.** Patterns were single-segment, so `.claude/agents/backend/api.md` was never opened while `.claude/agents/api.md` was. All rule, skill, sub-agent and command directories now match at any depth.
+- **New surfaces**: `.claude/rules/**/*.md`, `.codex/rules/**/*.rules`, `.github/instructions/**/*.instructions.md`, `.github/agents/*.agent.md`, `.cursor/agents/**`, `.gemini/agents/**`, `AGENTS.override.md`, and `skills/**/SKILL.md` under `.codex`, `.gemini`, `.github` and `.agents` — the [Agent Skills](https://agentskills.io) path several agents read from each other. Every existing rule applies to them unchanged (closes #23).
+- **`--user-scope`** (closes #24): Codex and Claude Code load an instruction file from your home directory that counts toward the same 32 KB concatenation budget, so a repo-only total understates it. Opt-in, off by default, and **size only** — the content of `~/.codex/AGENTS.md` never enters a finding.
+- Found on a real checkout while validating: four `AGENTS.md` files totalling 65.6 KB, 33.6 KB of it truncated away, with no single file anywhere near the limit.
+- 98-test suite.
+
 ## 0.15.1 — 2026-09-04
 
 Reported on r/ClaudeCode, and the reporter was right.

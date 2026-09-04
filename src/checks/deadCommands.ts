@@ -45,13 +45,18 @@ export function buildCommandIndex(root: string, entries: WalkEntry[]): CommandIn
     } else if (base === "Makefile") {
       idx.hasMakefile = true;
       parsed++;
-      for (const line of fs.readFileSync(path.join(root, e.rel), "utf8").split(/\r?\n/)) {
-        const m = /^([A-Za-z0-9_.-]+):(?!=)/.exec(line);
-        if (m?.[1]) {
-          const list = idx.makeTargets.get(m[1]) ?? [];
-          list.push(e.rel);
-          idx.makeTargets.set(m[1], list);
+      try {
+        for (const line of fs.readFileSync(path.join(root, e.rel), "utf8").split(/\r?\n/)) {
+          const m = /^([A-Za-z0-9_.-]+):(?!=)/.exec(line);
+          if (m?.[1]) {
+            const list = idx.makeTargets.get(m[1]) ?? [];
+            list.push(e.rel);
+            idx.makeTargets.set(m[1], list);
+          }
         }
+      } catch {
+        /* unreadable or vanished between the walk and the read — a linter
+           that dies on one file is worse than one that skips it */
       }
     }
   }

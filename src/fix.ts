@@ -54,7 +54,10 @@ export async function applyFixes(
     const i = f.line - 1;
     const line = lines[i];
     if (line !== undefined && line.includes(fix.oldText)) {
-      lines[i] = line.replace(fix.oldText, fix.newText);
+      // the callback form takes the replacement literally: with a string
+      // replacement, `$$`, `$&`, "$`" and `$'` in a path would splice
+      // surrounding text into the file instead of writing what we found
+      lines[i] = line.replace(fix.oldText, () => fix.newText);
       fs.writeFileSync(p, lines.join("\n"));
       applied.push(f);
     } else {

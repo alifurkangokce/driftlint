@@ -5,6 +5,7 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { execFileSync } from "node:child_process";
 import { scan } from "../dist/scan.js";
+import { walk } from "../dist/fswalk.js";
 import { badgeJson } from "../dist/badge.js";
 
 function tmp(files = {}) {
@@ -254,4 +255,29 @@ test("untracked-context: the personal-file hint only names CLAUDE.local.md for C
   );
   assert.match(byFile.get("CLAUDE.md")?.hint ?? "", /CLAUDE\.local\.md/);
   assert.doesNotMatch(byFile.get(".opencode/knowledge/notes.md")?.hint ?? "x", /CLAUDE\.local\.md/);
+});
+
+// --- discovery: .github ---
+
+test("discovery: .github/copilot-instructions.md is actually scanned", () => {
+  const dir = tmp({
+    ".github/copilot-instructions.md": "Entry point is `src/app.ts`; helper is `src/missing.ts`.\n",
+    ".github/workflows/ci.yml": "name: ci\n",
+    "src/app.ts": "export const a = 1;\n",
+  });
+  const res = scan(dir);
+  assert.deepEqual(res.contextFiles, [".github/copilot-instructions.md"]);
+  const dead = res.findings.filter((f) => f.rule === "dead-path");
+  assert.equal(dead.length, 1);
+  assert.match(dead[0].message, /src\/missing\.ts/);
+});
+
+test("walk: .git is still skipped, .github is not", () => {
+  const dir = tmp({
+    ".git/config": "[core]\n\trepositoryformatversion = 0\n",
+    ".github/copilot-instructions.md": "Guidance.\n",
+  });
+  const rels = walk(dir).map((e) => e.rel);
+  assert.ok(!rels.some((r) => r === ".git" || r.startsWith(".git/")), ".git stays out");
+  assert.ok(rels.includes(".github/copilot-instructions.md"), ".github is walked");
 });

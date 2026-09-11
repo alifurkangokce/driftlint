@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Windows: memory entry paths consistently use `/`; auto-memory discovery recognizes drive letters and backslashes as well as older directory encodings. Tests run on Node 20 without shell glob expansion, with Ubuntu/Windows CI coverage on Node 20 and 22.
+- Twins no longer report drift caused only by LF/CRLF conversion. Sync preserves the target's line endings and leaves an already-current mirror untouched.
+- Reviewed Memory keeps both approved facts when proposal filenames collide, including collisions introduced between proposing and approving.
+- Command fixes and reviewdog suggestions target the script's source column. Multiple fixes on one line keep their original positions; ambiguous or stale replacements are skipped.
+- Explicit `cd` instructions no longer pass merely because a script or make target exists at the repository root. Separate inline examples keep separate working directories.
+- `ignore` patterns also suppress silent-config and dead-config-ref checks on excluded files, while those files remain available as path evidence.
+
 ## 0.17.0 — 2026-09-09
 
 A false-positive pass, from an unusually thorough review by a user who ran driftlint over a personal agent workspace of 139 findings and then checked, by hand, whether any of them were real. None were. Every item below is one of the reasons.

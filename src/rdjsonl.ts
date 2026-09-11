@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { Finding, ScanResult } from "./types.js";
+import { fixRange } from "./fixRange.js";
 
 const SEVERITY: Record<Finding["severity"], string> = {
   error: "ERROR",
@@ -42,13 +43,13 @@ export function toRdjsonl(result: ScanResult): string {
     };
     if (f.fix && f.line > 0) {
       const text = readLines(f.file)[f.line - 1];
-      const col = text?.indexOf(f.fix.oldText) ?? -1;
-      if (col !== -1) {
+      const range = fixRange(text, f.fix);
+      if (range) {
         diagnostic["suggestions"] = [
           {
             range: {
-              start: { line, column: col + 1 },
-              end: { line, column: col + 1 + f.fix.oldText.length },
+              start: { line, column: range.start + 1 },
+              end: { line, column: range.end + 1 },
             },
             text: f.fix.newText,
           },

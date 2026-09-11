@@ -111,7 +111,7 @@ test("memory audit: a memory describing another repo collapses into one info", (
 test("findMemoryDir: resolves the munged project path under CLAUDE_CONFIG_DIR", () => {
   const repo = tmp({ "README.md": "# x\n" });
   const configDir = tmp();
-  const munged = path.resolve(repo).replace(/\//g, "-");
+  const munged = path.resolve(repo).replace(/[/\\:]/g, "-");
   fs.mkdirSync(path.join(configDir, "projects", munged, "memory"), { recursive: true });
 
   const prev = process.env["CLAUDE_CONFIG_DIR"];

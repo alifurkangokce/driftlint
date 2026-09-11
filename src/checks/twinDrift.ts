@@ -59,7 +59,7 @@ function checkPair(claude: TwinInput, agents: TwinInput): Finding[] {
     if (!span) continue;
     const expected = buildTwinsBlock(path.posix.basename(source.file.path), source.file.content);
     const current = mirror.file.content.slice(span.start, span.end);
-    if (current === expected) return [];
+    if (current.replace(/\r\n/g, "\n") === expected) return [];
     const line = mirror.file.content.slice(0, span.start).split("\n").length;
     return [
       {

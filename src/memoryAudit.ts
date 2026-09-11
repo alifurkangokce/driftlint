@@ -27,7 +27,12 @@ export function findMemoryDir(repoRoot: string): string | null {
   const configDir = process.env["CLAUDE_CONFIG_DIR"] ?? path.join(os.homedir(), ".claude");
   const abs = path.resolve(repoRoot);
   // Claude Code munges the absolute project path into a directory name
-  const candidates = [...new Set([abs.replace(/\//g, "-"), abs.replace(/[/.]/g, "-")])];
+  const candidates = [...new Set([
+    abs.replace(/[^a-zA-Z0-9]/g, "-"),
+    // Older layouts preserve dots/underscores; Windows also has a drive colon.
+    abs.replace(/[/\\:]/g, "-"),
+    abs.replace(/[/\\:.]/g, "-"),
+  ])];
   for (const c of candidates) {
     const p = path.join(configDir, "projects", c, "memory");
     if (fs.existsSync(p)) return p;

@@ -17,6 +17,11 @@ npm test          # build + node:test suite
 node dist/cli.js <some-repo> --no-fail   # try it on a real repo
 ```
 
+CI runs the suite on Ubuntu and Windows with Node 20 and 22. `npm test` lists
+the test files explicitly, so it also works on Node versions without test-glob
+support. Keep repo-relative paths returned by the library slash-separated;
+use `node:path` when accessing the filesystem.
+
 Adding a check: implement it under `src/checks/`, wire it in `src/scan.ts`, add a fixture under `test/fixtures/` with both positive AND negative cases, and update the README table.
 
 ## Pull requests

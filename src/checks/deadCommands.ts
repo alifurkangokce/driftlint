@@ -71,7 +71,7 @@ export function checkDeadCommands(
   idx: CommandIndex,
 ): Finding[] {
   const findings: Finding[] = [];
-  const fileDir = path.dirname(file.path);
+  const fileDir = path.posix.dirname(file.path);
   const scopeManifests = (name: string) =>
     fileDir === "." ? [name] : [`${fileDir}/${name}`, name];
 
@@ -82,11 +82,11 @@ export function checkDeadCommands(
 
     const definedIn = map.get(ref.name) ?? [];
     const manifest = ref.kind === "npm-script" ? "package.json" : "Makefile";
-    const scope = scopeManifests(manifest);
+    let scope = scopeManifests(manifest);
     if (ref.cwd) {
       // the instruction already says where to run it — honor that directory
       const cleaned = ref.cwd.replace(/^\.\//, "").replace(/\/$/, "");
-      scope.push(`${cleaned}/${manifest}`, path.posix.join(fileDir === "." ? "" : fileDir, cleaned, manifest));
+      scope = [path.posix.join(cleaned, manifest), path.posix.join(fileDir, cleaned, manifest)];
     }
     if (definedIn.some((p) => scope.includes(p))) continue; // defined where the file points
 
@@ -115,7 +115,7 @@ export function checkDeadCommands(
       message: `${label} \`${ref.name}\` is not in ${where}.`,
       ...(close.length ? { hint: `closest: \`${close.join("`, `")}\`` } : {}),
       ...(close.length === 1 && close[0]
-        ? { fix: { oldText: ref.name, newText: close[0] } }
+        ? { fix: { oldText: ref.name, newText: close[0], ...(ref.column !== undefined ? { column: ref.column } : {}) } }
         : {}),
     });
   }

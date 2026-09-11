@@ -1,6 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import type { Finding } from "./types.js";
+import { fixRange } from "./fixRange.js";
 
 export interface FixOutcome {
   applied: Finding[];
@@ -28,6 +29,7 @@ export async function applyFixes(
     rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   }
 
+  const accepted: Finding[] = [];
   for (const f of fixable) {
     const fix = f.fix;
     if (!fix) continue;
@@ -42,6 +44,14 @@ export async function applyFixes(
       skipped.push(f);
       continue;
     }
+    accepted.push(f);
+  }
+  rl?.close();
+
+  // Resolve every range before editing, then apply right-to-left. A longer
+  // replacement must not shift another finding's original column.
+  const byFile = new Map<string, Finding[]>();
+  for (const f of accepted) {
     // findings normally come from our own scan, but applyFixes is exported: a
     // caller's finding must not be able to write outside the scanned root
     const p = path.resolve(root, f.file);
@@ -49,28 +59,46 @@ export async function applyFixes(
       skipped.push(f);
       continue;
     }
+    const group = byFile.get(p) ?? [];
+    group.push(f);
+    byFile.set(p, group);
+  }
+  for (const [p, group] of byFile) {
     let content: string;
     try {
       content = fs.readFileSync(p, "utf8");
     } catch {
-      skipped.push(f);
+      skipped.push(...group);
       continue;
     }
     const lines = content.split("\n");
-    const i = f.line - 1;
-    const line = lines[i];
-    if (line !== undefined && line.includes(fix.oldText)) {
-      // the callback form takes the replacement literally: with a string
-      // replacement, `$$`, `$&`, "$`" and `$'` in a path would splice
-      // surrounding text into the file instead of writing what we found
-      lines[i] = line.replace(fix.oldText, () => fix.newText);
+    const candidates: Array<{ finding: Finding; start: number; end: number }> = [];
+    for (const f of group) {
+      const range = f.fix && fixRange(lines[f.line - 1], f.fix);
+      if (!range || candidates.some((e) => e.finding.line === f.line && e.start === range.start && e.end === range.end && e.finding.fix?.newText === f.fix?.newText)) {
+        skipped.push(f);
+        continue;
+      }
+      candidates.push({ finding: f, ...range });
+    }
+    // Conflicting edits are ambiguous: do not pick a winner by input order.
+    const edits = candidates.filter((e) => {
+      const conflict = candidates.some((other) => other !== e && other.finding.line === e.finding.line && e.start < other.end && e.end > other.start);
+      if (conflict) skipped.push(e.finding);
+      return !conflict;
+    });
+    edits.sort((a, b) => b.finding.line - a.finding.line || b.start - a.start);
+    for (const { finding: f, start, end } of edits) {
+      const i = f.line - 1;
+      const line = lines[i]!;
+      // Slicing also treats dollar signs in replacement paths literally.
+      lines[i] = line.slice(0, start) + f.fix!.newText + line.slice(end);
+    }
+    if (edits.length) {
       fs.writeFileSync(p, lines.join("\n"));
-      applied.push(f);
-    } else {
-      skipped.push(f);
+      applied.push(...edits.map((e) => e.finding));
     }
   }
 
-  rl?.close();
   return { applied, skipped };
 }

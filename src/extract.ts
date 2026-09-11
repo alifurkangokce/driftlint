@@ -8,7 +8,6 @@ export function extractRefs(file: ContextFile): { paths: PathRef[]; commands: Co
   const paths: PathRef[] = [];
   const commands: CommandRef[] = [];
   const seenPath = new Set<string>();
-  const seenCmd = new Set<string>();
 
   let inFence = false;
   for (let i = 0; i < file.lines.length; i++) {
@@ -23,36 +22,27 @@ export function extractRefs(file: ContextFile): { paths: PathRef[]; commands: Co
     // --- commands ---
     // Only look inside code spans/fences — prose like "make informed decisions"
     // or a mentioned script name in a sentence is not a command claim.
-    const codeText = inFence
-      ? line
-      : [...line.matchAll(/`([^`\n]+)`/g)].map((m) => m[1]).join("  ");
-    // `cd server && yarn develop` scopes the command to server/ — capture it
-    const cwdMatch = /\bcd\s+([A-Za-z0-9_./-]+)\s*(?:&&|;)/.exec(codeText);
-    const cwd = cwdMatch?.[1];
-    for (const m of codeText.matchAll(/\b(?:npm|pnpm|bun)\s+run\s+([A-Za-z0-9:_.-]+)/g)) {
-      const name = m[1];
-      if (name && !seenCmd.has(`npm:${name}:${i}`)) {
-        seenCmd.add(`npm:${name}:${i}`);
-        commands.push({ kind: "npm-script", name, line: i + 1, ...(cwd ? { cwd } : {}) });
-      }
-    }
-    for (const m of codeText.matchAll(/\byarn\s+(?:run\s+)?([A-Za-z0-9:_.-]+)/g)) {
-      const name = m[1];
-      // `yarn foo` is shorthand for a script, but it is also how every yarn
-      // built-in is invoked — reporting those as missing scripts fails a yarn
-      // repo on its first run. Ambiguous names (publish, version) stay out:
-      // a missed finding beats a false error.
-      const builtins = YARN_BUILTINS;
-      if (name && !builtins.has(name) && !seenCmd.has(`npm:${name}:${i}`)) {
-        seenCmd.add(`npm:${name}:${i}`);
-        commands.push({ kind: "npm-script", name, line: i + 1, ...(cwd ? { cwd } : {}) });
-      }
-    }
-    for (const m of codeText.matchAll(/\bmake\s+([A-Za-z0-9_.-]+)/g)) {
-      const name = m[1];
-      if (name && !name.startsWith("-") && !seenCmd.has(`make:${name}:${i}`)) {
-        seenCmd.add(`make:${name}:${i}`);
-        commands.push({ kind: "make-target", name, line: i + 1, ...(cwd ? { cwd } : {}) });
+    const chunks = inFence
+      ? [{ text: line, offset: 0 }]
+      : [...line.matchAll(/`([^`\n]+)`/g)].map((m) => ({ text: m[1] ?? "", offset: m.index + 1 }));
+    for (const chunk of chunks) {
+      // Keep spans separate: a `cd` in one example must not scope another.
+      // Retain source offsets so fixes never replace an earlier prose word.
+      const pattern = /\b(?:(?:npm|pnpm|bun)\s+run\s+([A-Za-z0-9:_.-]+)|yarn\s+(?:run\s+)?([A-Za-z0-9:_.-]+)|make\s+([A-Za-z0-9_.-]+))/g;
+      for (const m of chunk.text.matchAll(pattern)) {
+        const name = m[1] ?? m[2] ?? m[3];
+        if (!name || name.startsWith("-")) continue;
+        // yarn's built-ins are ambiguous; precision beats coverage.
+        if (m[2] && YARN_BUILTINS.has(name)) continue;
+        const prefix = chunk.text.slice(0, m.index);
+        const cwd = /\bcd\s+([A-Za-z0-9_./-]+)\s*(?:&&|;)/.exec(prefix)?.[1];
+        commands.push({
+          kind: m[3] ? "make-target" : "npm-script",
+          name,
+          line: i + 1,
+          column: chunk.offset + m.index + m[0].length - name.length + 1,
+          ...(cwd ? { cwd } : {}),
+        });
       }
     }
 

@@ -5,7 +5,7 @@ A linter for agent context files: it verifies that the claims in `CLAUDE.md`, `A
 
 ## Commands
 
-- `npm test` — builds, then runs the whole suite (`node --test "test/*.test.js"`). Always run this before committing; it is the same command CI runs.
+- `npm test` — builds, then runs the whole suite (`node scripts/test.mjs` explicitly lists test files for Node 20 and Windows). Always run this before committing; it is the same command CI runs.
 - `npm run build` — TypeScript to `dist/`. Tests import from `dist/`, so a build is required after any source change.
 - `node dist/cli.js . --no-fail` — self-scan. The fixtures under `test/fixtures/` intentionally contain drift, so a non-empty report is expected here.
 

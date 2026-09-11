@@ -27,6 +27,8 @@ export interface Finding {
   fix?: {
     oldText: string;
     newText: string;
+    /** 1-based UTF-16 column in the original source line, when known. */
+    column?: number;
   };
 }
 
@@ -60,6 +62,8 @@ export interface CommandRef {
   kind: "npm-script" | "make-target";
   name: string;
   line: number;
+  /** 1-based UTF-16 column of the script/target name in the source line. */
+  column?: number;
   /** Working directory when the instruction says `cd <dir> && ...`. */
   cwd?: string;
 }

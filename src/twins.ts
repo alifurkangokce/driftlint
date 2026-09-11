@@ -33,7 +33,7 @@ export function stripGeneratedBlocks(content: string): string {
 }
 
 export function buildTwinsBlock(sourceName: string, sourceContent: string): string {
-  const payload = stripGeneratedBlocks(sourceContent).trim();
+  const payload = stripGeneratedBlocks(sourceContent).replace(/\r\n/g, "\n").trim();
   return `${TWINS_START_PREFIX} — mirrored from ${sourceName} by \`driftlint twins\`; edit ${sourceName}, not this block -->\n${payload}\n${TWINS_END}`;
 }
 
@@ -89,7 +89,7 @@ export function checkTwins(dir: string, opts: { source?: string } = {}): TwinsCh
   const span = findTwinsBlock(content);
   if (!span) return { ok: false, source, target, reason: "no-block" };
   const current = content.slice(span.start, span.end);
-  return current === expected
+  return current.replace(/\r\n/g, "\n") === expected
     ? { ok: true, source, target }
     : { ok: false, source, target, reason: "stale" };
 }
@@ -98,18 +98,25 @@ export function syncTwins(dir: string, opts: { source?: string } = {}): TwinsRes
   const { source, target } = resolvePair(dir, opts.source);
   const sourcePath = path.join(dir, source);
   if (!fs.existsSync(sourcePath)) throw new Error(`${source} does not exist in ${dir}`);
-  const block = buildTwinsBlock(source, fs.readFileSync(sourcePath, "utf8"));
+  const sourceContent = fs.readFileSync(sourcePath, "utf8");
+  const block = buildTwinsBlock(source, sourceContent);
 
   const targetPath = path.join(dir, target);
   if (!fs.existsSync(targetPath)) {
-    fs.writeFileSync(targetPath, `${block}\n`);
+    const eol = sourceContent.includes("\r\n") ? "\r\n" : "\n";
+    fs.writeFileSync(targetPath, `${block}\n`.replace(/\n/g, eol));
     return { source, target, action: "created" };
   }
   const content = fs.readFileSync(targetPath, "utf8");
   const span = findTwinsBlock(content);
+  if (span && content.slice(span.start, span.end).replace(/\r\n/g, "\n") === block) {
+    return { source, target, action: "unchanged" };
+  }
+  const eol = content.includes("\r\n") ? "\r\n" : "\n";
+  const targetBlock = block.replace(/\n/g, eol);
   const next = span
-    ? content.slice(0, span.start) + block + content.slice(span.end)
-    : `${content.replace(/\n*$/, "")}\n\n${block}\n`;
+    ? content.slice(0, span.start) + targetBlock + content.slice(span.end)
+    : `${content.replace(/(?:\r?\n)*$/, "")}${eol}${eol}${targetBlock}${eol}`;
   if (next === content) return { source, target, action: "unchanged" };
   fs.writeFileSync(targetPath, next);
   return { source, target, action: "updated" };

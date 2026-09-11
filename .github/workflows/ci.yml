@@ -7,19 +7,25 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [20, 22]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: ${{ matrix.node }}
       - run: npm ci
       - run: npm run build
+      - name: install mcp package dependencies
+        working-directory: mcp
+        run: npm install --no-save ../
       - name: build mcp package
-        run: |
-          cd mcp
-          npm install --no-save ../ "@modelcontextprotocol/sdk@^1.30.0" "zod@^3.25.0" "@types/node@^20.14.0" "typescript@^5.5.0"
-          npx tsc -p tsconfig.json
+        working-directory: mcp
+        run: npm run build
       - run: npm test
       - name: self-scan
         run: node dist/cli.js . --no-fail

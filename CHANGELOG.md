@@ -1,5 +1,32 @@
 # Changelog
 
+## 0.20.0 — 2026-09-30
+
+Which file actually loads. The agent ecosystem moved this month, and some of what it moved made this tool's own README wrong — so this release starts there.
+
+**Claude Code reads AGENTS.md now — conditionally.** Since v2.1.277 it reads AGENTS.md, but by default only when there is no `CLAUDE.md`, `.claude/CLAUDE.md` or `CLAUDE.local.md` at or above it. That turns a missing feature into a silent one. Four new `silent-config` cases, each from the documented behaviour:
+
+- **An AGENTS.md Claude never reads**, because a CLAUDE.md sits at or above it and nothing imports it. Reported only when AGENTS.md holds instructions CLAUDE.md doesn't — two identical copies lose Claude nothing. Several hidden files under one CLAUDE.md are reported once, on that CLAUDE.md.
+- **The `CLAUDE.local.md` trap.** A gitignored personal file counts as a CLAUDE.md, so creating one switches AGENTS.md off on your machine alone. Your teammates' Claude reads it; yours doesn't.
+- **"Read AGENTS.md" written in words.** Claude only sees the file if it decides to open it. `@AGENTS.md` loads it at launch, every session.
+- **The SessionStart workaround now double-loads** (`load-budget`, info). The hook that printed AGENTS.md was the standard fix for years; with native support, it adds a second copy — reported only when Claude would read AGENTS.md itself.
+
+Templates, examples, skill bundles (`.agents/` — which Claude documents it never reads), container payloads, and nested AGENTS.md files a CLAUDE.md deliberately names by path are left alone. Each of those was a false positive on a real repository first.
+
+**`dead-import`** — `@path` imports, which were being skipped entirely. A missing target is an error (with the single real candidate as a `--fix`); an import nested past the **four hops** Claude Code follows is a warning, because that file never loads. Parsed as documented: relative to the importing file, backslash-escaped spaces, nothing inside code spans, fences or comments. `@alice`, `@types/node`, `@1.2.3` and email addresses are not path claims.
+
+**`dead-glob`** — path-scoped rules whose globs match no file, so they never load: Claude `paths:` (rules and skills), Cursor `globs:` (unless `alwaysApply`), Copilot `applyTo:`, Kiro `fileMatchPattern` (with `inclusion: fileMatch`), Windsurf/Devin `globs:` (with `trigger: glob`). The matcher abstains on anything it can't read with confidence — negation, extglobs, globs into unwalked build output — and collapses into one note when most of a repo's rules are dead, which means it ships rules for projects it generates. Plus a sharper case under `silent-config`: a Claude rule scoped with `globs:` or `applyTo:` is **unscoped** — Claude reads only `paths:`, ignores the rest without an error, and loads the rule for every file.
+
+**New surfaces.** `.devin/rules/` and `.windsurf/rules/` (Windsurf is Devin Desktop now) with the documented **12,000-character** per-file limit; `.kiro/steering/` and its `#[[file:…]]` live references; `.cursorrules`; `.cursor/commands/`; `.github/prompts/*.prompt.md`; `.junie/guidelines.md`; `.continue/rules/`; `.aiassistant/rules/`.
+
+**CI.** `--format github` (workflow-command annotations — inline on a PR, on private repos, without GitHub Advanced Security), `--format gitlab` (Code Quality report), `--format azure` (`##vso[task.logissue]`). The Action now annotates PRs by default; `sarif-file` still routes to code scanning instead.
+
+**Validation.** Run over 61 real repositories from the August corpus, against 0.19: no existing finding changed. On the first 29, the new rules produced 23 findings; hand-labelling found 7 false positives in four classes (templates and examples, skill bundles, a container payload, an on-demand pointer), each now excluded and pinned by a test. On 32 repositories not looked at while tuning, 11 findings: 10 clearly real, 1 borderline. The clearest: a six-line CLAUDE.md saying documentation had moved, above a 127-line AGENTS.md titled *Engineering Protocol — scope: entire repository*, which Claude Code never read.
+
+**This README was wrong, and is fixed.** It said Claude Code reads only CLAUDE.md, that the request was "not planned", that nobody else verifies references against the tree (Claude Code's `/doctor prompt-audit` now does, interactively — see the comparison for the honest split), that the next milestone was an LLM pass shipped in August, and it pinned pre-commit to v0.7.0.
+
+- 162-test suite.
+
 ## 0.19.0 — 2026-09-22
 
 Nested projects, reported in [#27](https://github.com/alifurkangokce/driftlint/issues/27) by [@kims6305-bjk](https://github.com/kims6305-bjk) with a file:line diagnosis, a minimal repro and a count: **39 of their 44 findings were this one shape.**

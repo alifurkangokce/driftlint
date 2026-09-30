@@ -327,6 +327,7 @@ test("surfaces: .cursorrules, Junie, Continue and Copilot prompt files are scann
 
 import { toAzureLogging, toGithubAnnotations, toGitlabCodeQuality } from "../dist/ci.js";
 import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const fake = (findings) => ({ root: ".", contextFiles: [], findings, stats: { refsChecked: 0, refsBroken: 0, score: 100 } });
 const tricky = {
@@ -362,7 +363,8 @@ test("ci: Azure logging commands escape ; ] % and newlines, and leave info as a 
 });
 
 test("ci: --format rejects an unknown name and refuses to combine with --fix", () => {
-  const cli = new URL("../dist/cli.js", import.meta.url).pathname;
+  // fileURLToPath, not URL#pathname: on Windows the latter is "/C:/…", which no process can open
+  const cli = fileURLToPath(new URL("../dist/cli.js", import.meta.url));
   const dir = workspace({ "CLAUDE.md": "# x\n" });
   assert.equal(spawnSync(process.execPath, [cli, dir, "--format", "junit"]).status, 2);
   assert.equal(spawnSync(process.execPath, [cli, dir, "--format", "github", "--fix"]).status, 2);

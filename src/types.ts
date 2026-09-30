@@ -15,7 +15,9 @@ export interface Finding {
     | "untracked-context"
     | "dead-link"
     | "silent-config"
-    | "dead-config-ref";
+    | "dead-config-ref"
+    | "dead-import"
+    | "dead-glob";
   severity: Severity;
   /** Context file the claim lives in, relative to the scanned root. */
   file: string;
@@ -46,6 +48,7 @@ export interface ContextFile {
     | "copilot"
     | "gemini"
     | "windsurf"
+    | "kiro"
     | "cline"
     | "opencode"
     | "memory";

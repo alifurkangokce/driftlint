@@ -16,6 +16,10 @@ const IGNORED_DIRS = new Set([
 const BUILD_OUTPUT_DIRS = new Set(["dist", "build", "out", "target", "bin", "obj"]);
 const AGENT_DIRS = /(^|\/)\.(claude|claude-plugin|cursor|codex|gemini|agents|opencode|github|windsurf|clinerules|agent-memory)(\/|$)/;
 
+/** Every directory name the walk skips somewhere — a glob or path into one of
+ *  these can't be judged from the walk, so callers abstain on them. */
+export const UNWALKED_DIRS: ReadonlySet<string> = new Set([...IGNORED_DIRS, ...BUILD_OUTPUT_DIRS]);
+
 const MAX_DEPTH = 10;
 const MAX_ENTRIES = 200_000;
 

@@ -35,6 +35,23 @@ const SURFACES: Array<[RegExp, ContextFile["kind"]]> = [
   [/(^|\/)\.(claude|cursor|gemini)\/agents\/.+\.md$/, "subagent"],
   [/(^|\/)\.claude\/commands\/.+\.md$/, "command"],
 
+  // Cursor's legacy single-file rules, still read by Cursor and by other
+  // tools' importers (Claude Code's /init among them)
+  [/(^|\/)\.cursorrules$/, "cursor-rule"],
+  [/(^|\/)\.cursor\/commands\/.+\.md$/, "command"],
+  // Copilot prompt files
+  [/(^|\/)\.github\/prompts\/.+\.prompt\.md$/, "command"],
+
+  // Windsurf, now Devin Desktop: `.devin/rules/` is preferred, `.windsurf/rules/`
+  // the fallback, `.windsurfrules` the legacy single file
+  [/(^|\/)\.(windsurf|devin)\/rules\/.+\.md$/, "windsurf"],
+  // Kiro steering files
+  [/(^|\/)\.kiro\/steering\/.+\.md$/, "kiro"],
+  // JetBrains Junie and AI Assistant, Continue
+  [/(^|\/)\.junie\/guidelines\.md$/, "rule"],
+  [/(^|\/)\.aiassistant\/rules\/.+\.md$/, "rule"],
+  [/(^|\/)\.continue\/rules\/.+\.md$/, "rule"],
+
   // other CLIs
   [/(^|\/)\.windsurfrules$/, "windsurf"],
   [/(^|\/)\.clinerules$/, "cline"],

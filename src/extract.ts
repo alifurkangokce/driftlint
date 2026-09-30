@@ -56,6 +56,11 @@ export function extractRefs(file: ContextFile): { paths: PathRef[]; commands: Co
 
     // Candidates come from inline code spans and, inside fences, whole-line tokens.
     const candidates: string[] = [];
+    // Kiro's live file references: `#[[file:api/openapi.yaml]]` pulls the file
+    // into the steering context, so a moved target silently pulls in nothing
+    for (const m of line.matchAll(/#\[\[file:([^\]\n]+)\]\]/g)) {
+      if (m[1]) candidates.push(m[1].trim());
+    }
     for (const m of line.matchAll(/`([^`\n]+)`/g)) {
       if (m[1]) candidates.push(m[1]);
     }

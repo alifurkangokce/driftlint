@@ -18,6 +18,11 @@ const INSTRUCTION_SOFT_LIMIT = 150;
 
 const MAIN_KINDS = new Set(["claude-md", "agents-md", "gemini"]);
 
+/** Windsurf (now Devin Desktop) caps each workspace rule file at 12,000
+ *  characters — documented, and enforced without telling you what was cut.
+ *  https://docs.devin.ai/desktop/cascade/memories */
+const WINDSURF_RULE_LIMIT = 12_000;
+
 export interface UserScopeFile {
   /** Display path, e.g. `~/.codex/AGENTS.md`. */
   label: string;
@@ -27,6 +32,20 @@ export interface UserScopeFile {
 export function checkLoadBudget(files: ContextFile[], userScope: UserScopeFile[] = []): Finding[] {
   const findings: Finding[] = [];
   for (const file of files) {
+    if (file.kind === "windsurf") {
+      const chars = [...file.content].length;
+      if (chars > WINDSURF_RULE_LIMIT) {
+        findings.push({
+          rule: "load-budget",
+          severity: "warning",
+          file: file.path,
+          line: 0,
+          message: `${chars.toLocaleString("en-US")} characters — Windsurf/Devin limits a workspace rule file to 12,000, so ${(chars - WINDSURF_RULE_LIMIT).toLocaleString("en-US")} of them are not guaranteed to reach the model.`,
+          hint: "split it into several rule files under `.windsurf/rules/` (or `.devin/rules/`); the limit is per file.",
+        });
+      }
+      continue;
+    }
     if (!MAIN_KINDS.has(file.kind)) continue;
 
     if (file.kind === "agents-md") {

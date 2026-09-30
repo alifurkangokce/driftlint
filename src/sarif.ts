@@ -15,6 +15,8 @@ const RULE_DESCRIPTIONS: Record<Finding["rule"], string> = {
   "dead-link": "Markdown link points at a file or heading anchor that does not exist",
   "silent-config": "Config file is in a shape or location the agent CLI silently ignores",
   "dead-config-ref": "Agent config references a script or file that does not exist",
+  "dead-import": "An @path import points at a file that does not exist, or sits too deep to load",
+  "dead-glob": "A path-scoped rule whose globs match no file in the repo, so it never loads",
 };
 
 const LEVEL: Record<Finding["severity"], "error" | "warning" | "note"> = {

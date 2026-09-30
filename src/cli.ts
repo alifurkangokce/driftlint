@@ -9,6 +9,7 @@ import { toRdjsonl } from "./rdjsonl.js";
 import { diffScan } from "./diff.js";
 import { applyFixes } from "./fix.js";
 import { badgeJson } from "./badge.js";
+import { toAzureLogging, toGithubAnnotations, toGitlabCodeQuality } from "./ci.js";
 
 const HELP = `driftlint — finds the claims in your CLAUDE.md / AGENTS.md / skills that your code no longer supports.
 
@@ -26,9 +27,14 @@ Usage:
                        mirror AGENTS.md into CLAUDE.md (or the reverse) as a
                        marked block, so Claude Code and Codex/Amp/Cursor read
                        the same instructions; --check fails CI when the mirror
-                       is stale (the anthropics/claude-code#6235 problem)
+                       is stale — for Codex, Cursor and every tool that reads only
+                       AGENTS.md, while Claude Code reads CLAUDE.md whenever one exists
 
 Options:
+  --format <name>      output format: text (default), json, sarif, rdjsonl,
+                       github  — workflow-command annotations on the PR, no GHAS needed
+                       gitlab  — Code Quality report (artifacts:reports:codequality)
+                       azure   — Azure Pipelines ##vso[task.logissue] commands
   --json               machine-readable output
   --sarif              SARIF 2.1.0 output (pipe to a file, upload to GitHub code scanning)
   --rdjsonl            reviewdog RDFormat output with one-click Apply-suggestion payloads:
@@ -66,8 +72,13 @@ Checks:
                      (unbridged near-copies, differing command claims, stale twins mirror)
   untracked-context  context files git doesn't track — your agent sees them, your team's don't
   dead-link          markdown links to files that moved or #anchors that were renamed
-  silent-config      config the tool ignores (.cursor/rules/*.md, misplaced skills)
+  silent-config      config the tool ignores: .cursor/rules/*.md, misplaced skills, a Claude
+                     rule scoped with globs: instead of paths:, and AGENTS.md files Claude
+                     Code never reads because a CLAUDE.md sits at or above them
   dead-config-ref    hooks/MCP/plugin/skill config pointing at scripts that don't exist
+  dead-import        @path imports of missing files, or nested past the 4 hops Claude Code follows
+  dead-glob          path-scoped rules (Claude paths:, Cursor globs:, Copilot applyTo:, Kiro,
+                     Windsurf) whose globs match no file in the repo — they never load
   narrative-claim    (--llm only) narrative claims the code contradicts
 
 Config (.driftlintrc.json at the scanned root):
@@ -90,6 +101,7 @@ interface Options {
   llmModel?: string;
   skillBudget?: number;
   userScope: boolean;
+  format?: "github" | "gitlab" | "azure";
 }
 
 function parseArgs(argv: string[]): Options | "help" | "version" {
@@ -127,6 +139,17 @@ function parseArgs(argv: string[]): Options | "help" | "version" {
         process.exit(2);
       }
       opts.badgeJsonPath = p;
+    }
+    else if (a === "--format") {
+      const f = argv[++i];
+      if (f === "json") opts.json = true;
+      else if (f === "sarif") opts.sarif = true;
+      else if (f === "rdjsonl") opts.rdjsonl = true;
+      else if (f === "github" || f === "gitlab" || f === "azure") opts.format = f;
+      else if (f !== "text") {
+        console.error("driftlint: --format expects text, json, sarif, rdjsonl, github, gitlab or azure");
+        process.exit(2);
+      }
     }
     else if (a === "--user-scope") opts.userScope = true;
     else if (a === "--llm") opts.llm = true;
@@ -186,8 +209,8 @@ async function main(): Promise<void> {
     console.error(`driftlint: ${parsed.root} is not a directory`);
     process.exit(2);
   }
-  if (parsed.fix && (parsed.json || parsed.sarif || parsed.rdjsonl)) {
-    console.error("driftlint: --fix cannot be combined with --json/--sarif/--rdjsonl");
+  if (parsed.fix && (parsed.json || parsed.sarif || parsed.rdjsonl || parsed.format)) {
+    console.error("driftlint: --fix cannot be combined with a machine-readable --format");
     process.exit(2);
   }
 
@@ -257,6 +280,14 @@ async function main(): Promise<void> {
     console.log(
       `driftlint --fix: ${applied.length} applied, ${skipped.length} skipped (re-scan above is the current state)`,
     );
+  } else if (parsed.format === "github") {
+    const out = toGithubAnnotations(result);
+    if (out) console.log(out);
+  } else if (parsed.format === "gitlab") {
+    console.log(toGitlabCodeQuality(result));
+  } else if (parsed.format === "azure") {
+    const out = toAzureLogging(result);
+    if (out) console.log(out);
   } else if (parsed.sarif) {
     console.log(JSON.stringify(toSarif(result, readVersion()), null, 2));
   } else if (parsed.rdjsonl) {

@@ -3,7 +3,7 @@ import * as path from "node:path";
 import type { ContextFile, Finding, PathRef, RepoIndex } from "../types.js";
 import { KNOWN_META_FILES } from "./metaFiles.js";
 
-const BUILD_DIRS = new Set([
+export const BUILD_DIRS: ReadonlySet<string> = new Set([
   "node_modules", "dist", "build", "builddir", "out", "coverage", "target",
   "bin", "obj", ".next", ".nuxt", "vendor", "venv", ".venv", "__pycache__",
   "generated", ".cache", ".devenv", ".turbo", ".output", "tmp", "temp", "logs",

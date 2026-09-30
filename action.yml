@@ -28,6 +28,10 @@ inputs:
     description: "Also write SARIF here and upload it to GitHub code scanning (requires 'security-events: write' permission)"
     required: false
     default: ""
+  annotations:
+    description: "Annotate findings inline on the PR with workflow commands — works on private repos without GitHub Advanced Security. Skipped when sarif-file is set, to avoid duplicates."
+    required: false
+    default: "true"
 runs:
   using: "composite"
   steps:
@@ -46,6 +50,10 @@ runs:
           ARGS="$ARGS --diff origin/$GITHUB_BASE_REF...HEAD"
         fi
         npx -y @alifurkangokce/driftlint@latest $ARGS
+    - name: Annotate findings
+      if: ${{ inputs.annotations == 'true' && inputs.sarif-file == '' && (success() || failure()) }}
+      shell: bash
+      run: npx -y @alifurkangokce/driftlint@latest ${{ inputs.path }} --skill-budget ${{ inputs.skill-budget }} --format github --no-fail
     - name: Write SARIF
       if: ${{ inputs.sarif-file != '' && (success() || failure()) }}
       shell: bash

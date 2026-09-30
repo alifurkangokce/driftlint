@@ -13,7 +13,7 @@ npx @alifurkangokce/driftlint twins    # keep CLAUDE.md and AGENTS.md in sync
 
 Zero config. No API key. Zero runtime dependencies. Works on any repo.
 
-> **The two-file problem:** Claude Code reads CLAUDE.md; Codex, Cursor, Amp and 30+ other tools read AGENTS.md. Asking for both is [the most-upvoted request on the Claude Code tracker](https://github.com/anthropics/claude-code/issues/6235) — 5,200+ reactions, marked *not planned* — so teams keep two copies, and the copies drift silently. `driftlint twins --check` is the CI gate for that; the `twin-drift` rule catches pairs that already diverged.
+> **Which file actually loads?** Claude Code [reads AGENTS.md since v2.1.277](https://code.claude.com/docs/en/memory#agents-md) — but by default only when there is **no** CLAUDE.md, `.claude/CLAUDE.md` or `CLAUDE.local.md` at or above it. Keep both, and every AGENTS.md below your CLAUDE.md is skipped without a word; add a personal `CLAUDE.local.md`, and AGENTS.md switches off on your machine only. driftlint tells you which of your files each agent never reads — and `driftlint twins --check` keeps the two in sync when you do keep both.
 
 ## Why
 
@@ -47,10 +47,11 @@ It verifies every memory against the repo it describes: **dead paths and removed
 
 ## Twins: CLAUDE.md ↔ AGENTS.md
 
-The most-upvoted request on the Claude Code tracker — [support AGENTS.md, 5,200+ 👍](https://github.com/anthropics/claude-code/issues/6235) — is marked *not planned*. So teams using Claude Code next to Codex/Amp/Cursor keep **both** files, and the copies drift: someone fixes the test command in CLAUDE.md, AGENTS.md goes stale, and a week later half the team's agents follow the outdated copy. driftlint attacks this twice:
+For a year the most-upvoted request on the Claude Code tracker was [support AGENTS.md](https://github.com/anthropics/claude-code/issues/6235). It shipped in v2.1.277 — with a rule: Claude reads AGENTS.md only when no CLAUDE.md exists at or above it. So a team that keeps **both** files, for Claude-specific instructions next to shared ones, still has two copies, and they still drift: someone fixes the test command in CLAUDE.md, AGENTS.md goes stale, and Codex, Cursor and Amp follow the outdated copy while Claude never looks at it. driftlint attacks this three ways:
 
 ```bash
-driftlint                  # the twin-drift rule flags pairs that already diverged
+driftlint                  # twin-drift flags pairs that diverged; silent-config flags
+                           # AGENTS.md files Claude never reads because of a CLAUDE.md above them
 driftlint twins            # mirror AGENTS.md into CLAUDE.md as a marked, idempotent block
 driftlint twins --check    # CI mode: fail when the mirror is stale
 ```
@@ -68,13 +69,15 @@ The `twin-drift` rule stays quiet for intentionally different files — it fires
 | `foreign-context` | A file whose references mostly don't resolve — probably describes another repo; findings collapse into one warning instead of a flood |
 | `narrative-claim` | *(only with `--llm`)* Narrative claims ("auth goes through the BFF") that the code contradicts — verified with your own Anthropic API credentials |
 | `template-context` | Workflow files that describe a project this repo *generates* — collapsed into one warning instead of a flood |
-| `load-budget` | Content that silently never reaches the model: AGENTS.md past Codex's 32 KB truncation limit, files past the ~150-instruction adherence ceiling |
+| `load-budget` | Content that silently never reaches the model: AGENTS.md past Codex's 32 KB truncation limit, Windsurf/Devin rule files past 12,000 characters, files past the ~150-instruction adherence ceiling, a SessionStart hook that loads AGENTS.md a second time |
 | `missing-rationale` | Directive walls (never/always/must) with no stated reason — [the rules nobody dares delete](https://arxiv.org/abs/2608.11095) |
 | `twin-drift` | CLAUDE.md and AGENTS.md that carry the same instructions but diverged — differing command claims, drifted near-copies, stale `driftlint twins` mirrors |
 | `untracked-context` | Context files git doesn't track — your agent follows them, your teammates' agents never see them (`CLAUDE.local.md` is exempt by convention) |
 | `dead-link` | Markdown links whose target file moved, or whose `#anchor` heading was renamed — with the closest heading offered as a fix |
-| `silent-config` | Config in a shape or place the tool ignores: a plain `.md` under `.cursor/rules` (Cursor needs `.mdc`), a bare `.md` where a `<name>/SKILL.md` belongs |
+| `silent-config` | Config in a shape or place the tool ignores: an AGENTS.md Claude Code never reads because a CLAUDE.md sits above it, a `CLAUDE.local.md` that switches AGENTS.md off, "read AGENTS.md" written in words instead of imported, a Claude rule scoped with `globs:` (only `paths:` is read — so it loads everywhere), a plain `.md` under `.cursor/rules`, a bare `.md` where a `<name>/SKILL.md` belongs |
 | `dead-config-ref` | Hooks, MCP servers, plugin manifests and skill `allowed-tools` pointing at scripts that don't exist — valid JSON, missing file |
+| `dead-import` | `@path` imports of files that don't exist (Claude Code loads nothing in their place), and imports nested past the **four hops** Claude Code follows |
+| `dead-glob` | Path-scoped rules whose globs match no file in the repo, so they never load — Claude `paths:`, Cursor `globs:`, Copilot `applyTo:`, Kiro `fileMatchPattern`, Windsurf/Devin `globs:` |
 
 `dead-command` is workspace-aware: a script that exists in another monorepo package is reported as a *location* warning ("defined in `packages/client/package.json`"), not a dead command.
 
@@ -87,6 +90,11 @@ Schema validators check that your JSON is well-formed. driftlint checks whether 
 - a plugin manifest listing a command that isn't there installs fine and does nothing
 - a plain `.md` under `.cursor/rules` is [ignored by Cursor](https://cursor.com/docs/context/rules) — no error, no rule
 - a skill whose `description` + `when_to_use` runs past **1,536 characters** loses the tail: [that's where the skill listing truncates](https://code.claude.com/docs/en/skills)
+- an `AGENTS.md` below a `CLAUDE.md` is [never read by Claude Code](https://code.claude.com/docs/en/memory#when-claude-code-reads-agents-md) unless something imports it — flagged only when it holds instructions CLAUDE.md doesn't, because two identical copies lose Claude nothing
+- a gitignored `CLAUDE.local.md` counts as a CLAUDE.md, so creating one switches AGENTS.md off **on your machine only** — teammates keep getting it, you don't
+- `.claude/rules/*.md` reads exactly one frontmatter key, `paths:`. A Cursor-style `globs:` is ignored without an error, and the rule loads for every file instead of the ones it names
+- a rule scoped to `**/*.py` in a repo with no Python files never loads — the usual trace of a rule copied from another project
+- an `@docs/api.md` import of a file that moved loads nothing; one nested five imports deep loads nothing either, because Claude Code stops at four
 
 Skills are discovered wherever the [Agent Skills](https://agentskills.io) standard puts them — `.claude/skills/` and `.cursor/skills/` alike.
 
@@ -98,6 +106,9 @@ npx @alifurkangokce/driftlint path/to/repo    # scan another repo
 npx @alifurkangokce/driftlint --fix           # interactively apply safe fixes (--yes: all)
 npx @alifurkangokce/driftlint --json          # machine-readable output (CI-friendly)
 npx @alifurkangokce/driftlint --sarif         # SARIF 2.1.0 for GitHub code scanning
+npx @alifurkangokce/driftlint --format github # PR annotations via workflow commands (no GHAS needed)
+npx @alifurkangokce/driftlint --format gitlab # GitLab Code Quality report
+npx @alifurkangokce/driftlint --format azure  # Azure Pipelines ##vso[task.logissue] annotations
 npx @alifurkangokce/driftlint --no-fail       # report but always exit 0
 npx @alifurkangokce/driftlint --diff          # only drift THIS change caused (vs origin/main)
 ```
@@ -122,7 +133,26 @@ jobs:
       - uses: alifurkangokce/driftlint@main
         with:
           diff: "true"                  # PRs: only report drift this PR caused
-          sarif-file: driftlint.sarif   # optional: findings become PR annotations
+```
+
+Findings are annotated inline on the PR by default, with plain workflow commands — so it works on private repositories without GitHub Advanced Security. Set `sarif-file: driftlint.sarif` instead to send them to code scanning (that needs `security-events: write`, and GHAS on private repos), or `annotations: "false"` to keep them in the log only.
+
+**GitLab CI**
+
+```yaml
+driftlint:
+  image: node:22
+  script: npx -y @alifurkangokce/driftlint --format gitlab --no-fail > gl-code-quality.json
+  artifacts:
+    reports:
+      codequality: gl-code-quality.json
+```
+
+**Azure Pipelines**
+
+```yaml
+- script: npx -y @alifurkangokce/driftlint --format azure
+  displayName: driftlint
 ```
 
 Or as a [pre-commit](https://pre-commit.com) hook:
@@ -130,7 +160,7 @@ Or as a [pre-commit](https://pre-commit.com) hook:
 ```yaml
 repos:
   - repo: https://github.com/alifurkangokce/driftlint
-    rev: v0.7.0
+    rev: v0.20.0
     hooks:
       - id: driftlint
 ```
@@ -222,13 +252,13 @@ Everything an agent loads from the repo, nested directories included:
 | | |
 |---|---|
 | Root instructions | `CLAUDE.md`, `CLAUDE.local.md`, `AGENTS.md`, `AGENTS.override.md`, `GEMINI.md` — anywhere in the tree |
-| Rules | `.claude/rules/**/*.md`, `.cursor/rules/**/*.mdc`, `.codex/rules/**/*.rules`, `.clinerules` (file or directory), `.windsurfrules` |
+| Rules | `.claude/rules/**/*.md`, `.cursor/rules/**/*.mdc`, `.cursorrules`, `.codex/rules/**/*.rules`, `.devin/rules/**` and `.windsurf/rules/**`, `.windsurfrules`, `.kiro/steering/**`, `.clinerules` (file or directory), `.continue/rules/**`, `.junie/guidelines.md`, `.aiassistant/rules/**` |
 | Skills ([Agent Skills](https://agentskills.io)) | `.claude`, `.cursor`, `.codex`, `.gemini`, `.github` and `.agents` — all `skills/**/SKILL.md` |
-| Sub-agents & commands | `.claude/agents/**`, `.cursor/agents/**`, `.gemini/agents/**`, `.github/agents/*.agent.md`, `.claude/commands/**` |
+| Sub-agents & commands | `.claude/agents/**`, `.cursor/agents/**`, `.gemini/agents/**`, `.github/agents/*.agent.md`, `.claude/commands/**`, `.cursor/commands/**`, `.github/prompts/*.prompt.md` |
 | Copilot | `.github/copilot-instructions.md`, `.github/instructions/**/*.instructions.md` |
 | Other | `.opencode/{agent,command,knowledge}/**`, `.agent-memory/**` |
 
-Machine-readable config is checked too (hooks, `.mcp.json`, plugin manifests) — see [Config that never loads](#config-that-never-loads).
+Machine-readable config is checked too (hooks, `.mcp.json`, plugin manifests), and so are the references agents follow out of these files: `@path` imports in CLAUDE.md / AGENTS.md / GEMINI.md, and Kiro's `#[[file:…]]` live references — see [Config that never loads](#config-that-never-loads).
 
 **User scope.** Codex and Claude Code also load an instruction file from your home directory, and it counts toward the same 32 KB budget as the repo's files. `--user-scope` folds `~/.codex/AGENTS.md` and `~/.claude/CLAUDE.md` into the total. It's off by default (CI has no such file, and reading someone's home directory during a repo lint should be a choice), and only the **size** is read — the content never enters a finding.
 
@@ -243,26 +273,29 @@ driftlint also ships as a Claude Code plugin: a `/driftlint` command that runs t
 
 ## How driftlint compares
 
-| | **driftlint** | agnix | reporails | ctxlint / agents-lint | claude-mem etc. |
+| | **driftlint** | Claude Code `/doctor prompt-audit` | agnix | reporails | ctxlint / agents-lint |
 |---|---|---|---|---|---|
-| Referenced paths, scripts and links **verified against the tree** | ✅ | ❌ structural only | ❌ [documented as out of scope](https://github.com/reporails/cli) | ✅ | ❌ |
-| Hard vendor limits that truncate silently (Codex's concatenated 32 KB, the 1,536-char skill listing, `.cursor/rules/*.md` never loading) | ✅ | partial | ✅ per-agent caps, plus a 100 KB advisory aggregate (`CORE:E:0001`) | ❌ | ❌ |
-| Memory files | ✅ contents verified against the repo — dead refs, broken `[[links]]`, MEMORY.md past the load fold | ❌ | ✅ structure and size rules (`CORE:S:0023`) | ❌ | ❌ it *is* the memory store |
-| **Reviewed Memory workflow** (agent proposes → human approves → synced → re-verified) | ✅ | ❌ | ❌ | ❌ | ❌ auto-capture, no review |
-| CLAUDE.md ↔ AGENTS.md drift + a CI mirror gate | ✅ mechanical diff + `twins --check` | ❌ | partial — cross-agent conflict rules (`CORE:C:0026`, `CORE:C:0046`) | ❌ | ❌ |
-| Instruction surfaces covered | project scope, nested dirs | broad | broadest — project, user and system scope | narrow | — |
-| How well the instructions are *written* (clarity, structure, a 0–10 score) | ❌ by design | partial | ✅ 120+ rules | ❌ | ❌ |
-| Structural / spec conformance, LSP, IDE plugins | ❌ by design | ✅ 454 rules | partial | partial | ❌ |
-| Runs fully offline, no account | ✅ | ✅ | ❌ sign-in unlocks fix text and exact locations | ✅ | varies |
-| License | MIT | MIT | BUSL 1.1 (Apache 2.0 after 3 years) | MIT | varies |
+| Referenced paths, scripts and links **verified against the tree** | ✅ deterministic | ✅ LLM review, in-session | ❌ structural only | ❌ [documented as out of scope](https://github.com/reporails/cli) | ✅ |
+| Runs in CI, fails a PR, same answer every run | ✅ | ❌ interactive, one model's judgement | ✅ | ✅ | ✅ |
+| Agents covered | Claude, Codex, Cursor, Copilot, Windsurf/Devin, Kiro, Gemini, Cline, Junie, Continue | Claude Code's own files | broad | broadest | narrow |
+| Which file *actually loads* — AGENTS.md shadowed by CLAUDE.md, dead `@imports`, globs that match nothing | ✅ | partial | ❌ | partial | ❌ |
+| Hard vendor limits that truncate silently (Codex's concatenated 32 KB, Windsurf's 12,000 characters, the 1,536-char skill listing) | ✅ | partial | partial | ✅ per-agent caps, plus a 100 KB advisory aggregate (`CORE:E:0001`) | ❌ |
+| Memory files | ✅ contents verified against the repo — dead refs, broken `[[links]]`, MEMORY.md past the load fold | partial | ❌ | ✅ structure and size rules (`CORE:S:0023`) | ❌ |
+| **Reviewed Memory workflow** (agent proposes → human approves → synced → re-verified) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| CLAUDE.md ↔ AGENTS.md drift + a CI mirror gate | ✅ mechanical diff + `twins --check` | contradictions, in-session | ❌ | partial — cross-agent conflict rules (`CORE:C:0026`, `CORE:C:0046`) | ❌ |
+| How well the instructions are *written* (clarity, patterns for older models) | ❌ by design | ✅ | partial | ✅ 120+ rules | ❌ |
+| Structural / spec conformance, LSP, IDE plugins | ❌ by design | ❌ | ✅ 454 rules | partial | partial |
+| Runs fully offline, no account, no tokens | ✅ | ❌ spends tokens each run | ✅ | ❌ sign-in unlocks fix text and exact locations | ✅ |
+| License | MIT | bundled with Claude Code | MIT | BUSL 1.1 (Apache 2.0 after 3 years) | MIT |
 
 The overlap is real and growing, so here is the honest split:
 
+- Claude Code's [`/doctor prompt-audit`](https://code.claude.com/docs/en/memory#audit-your-instruction-files) is a **reviewer**: in a session, Claude reads your instruction files and proposes edits — stale paths and commands, contradictions, patterns written for older models. It is the right tool for rewriting a file. It is not a gate: it runs when you ask, spends tokens each time, can answer differently twice, and sees Claude Code's files only.
 - [agnix](https://github.com/agent-sh/agnix) checks that your files are **well-formed** — schema and spec conformance, with an LSP and IDE plugins.
 - [reporails](https://github.com/reporails/cli) checks how they are **written and organised** — clarity, structure, size ceilings, memory and rule surfaces across project, user and system scope.
 - driftlint checks whether they are **still true** — every path, script, link and config reference resolved against the actual tree, and a review workflow for the knowledge agents add.
 
-The last one is the part nobody else claims: a file can be perfectly formed, well written, correctly sized, and still tell your agent to run a script someone deleted in March.
+The relationship to `/doctor prompt-audit` is the one between `tsc` and a code reviewer: use both, and let the deterministic one block the merge. A file can be perfectly formed, well written, correctly sized — reviewed last week, even — and still tell your agent to run a script someone deleted this morning.
 
 ## What it touches
 
@@ -270,7 +303,7 @@ No runtime dependencies, no install scripts, no telemetry, and no network call �
 
 ## Roadmap
 
-See [ROADMAP.md](ROADMAP.md) — next up: an **optional LLM pass** for narrative claims, then **Reviewed Memory**: agents *propose* knowledge at session end, humans approve via PR, git distributes it, and driftlint keeps it honest.
+See [ROADMAP.md](ROADMAP.md). Shipped so far: the drift linter, Reviewed Memory, PR-diff mode, twins, auto-memory audit, the optional LLM pass, and load-order checks across ten agents. Next on demand: a VS Code extension and org-wide scanning.
 
 ## License
 

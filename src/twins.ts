@@ -3,8 +3,9 @@ import * as path from "node:path";
 
 /**
  * Twins: CLAUDE.md and AGENTS.md carrying the same instructions.
- * Claude Code reads only CLAUDE.md (anthropics/claude-code#6235, marked
- * "not planned"), Codex/Amp/Cursor read AGENTS.md — so teams keep both, and
+ * Claude Code reads AGENTS.md only when no CLAUDE.md exists at or above it
+ * (v2.1.277+), while Codex/Amp/Cursor read AGENTS.md alone — so teams that
+ * keep Claude-specific instructions still keep both files, and
  * the copies drift. `driftlint twins` mirrors one into the other as a marked
  * block; `--check` fails CI when the mirror is stale; the `twin-drift` rule
  * flags unbridged pairs that have already diverged.

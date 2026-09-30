@@ -3,11 +3,11 @@ import type { CommandRef, ContextFile, Finding } from "../types.js";
 import { buildTwinsBlock, findTwinsBlock, stripGeneratedBlocks } from "../twins.js";
 
 /**
- * CLAUDE.md + AGENTS.md in the same directory are twins: most teams keep both
- * because Claude Code only reads the first and Codex/Amp/Cursor read the
- * second (anthropics/claude-code#6235 — 5,200+ 👍, marked "not planned").
- * The predictable failure: someone fixes a command in one file, the twin goes
- * stale, and half the team's agents follow the outdated copy.
+ * CLAUDE.md + AGENTS.md in the same directory are twins. Claude Code reads the
+ * first whenever it exists and skips the second; Codex/Amp/Cursor read only
+ * the second. Teams with Claude-specific instructions therefore keep both,
+ * and the predictable failure follows: someone fixes a command in one file,
+ * the twin goes stale, and half the team's agents follow the outdated copy.
  */
 
 export interface TwinInput {

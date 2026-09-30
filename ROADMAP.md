@@ -53,7 +53,7 @@ A linter's only capital is trust, so every release prioritizes precision before 
 
 ## v0.10 — twins ✅ shipped in 0.10.0
 
-- `twin-drift`: CLAUDE.md/AGENTS.md pairs that diverged — the [5,200-reaction problem](https://github.com/anthropics/claude-code/issues/6235) Claude Code marked *not planned*
+- `twin-drift`: CLAUDE.md/AGENTS.md pairs that diverged — the [most-upvoted request](https://github.com/anthropics/claude-code/issues/6235) on the Claude Code tracker at the time (native AGENTS.md support shipped later, in v2.1.277, and only reads AGENTS.md when there is no CLAUDE.md)
 - `driftlint twins [--check]`: idempotent marker-block mirror + CI staleness gate
 - `untracked-context`: context files git doesn't track never reach teammates or CI
 
@@ -92,6 +92,14 @@ A linter's only capital is trust, so every release prioritizes precision before 
 ## v0.19 — nested projects ✅ shipped in 0.19.0
 
 - Paths written from a nested project's root resolve against that project (#27) · unresolvable references in a nested project's own documents are warnings, not errors
+
+## v0.20 — which file actually loads ✅ shipped in 0.20.0
+
+- AGENTS.md files Claude Code never reads because a CLAUDE.md sits above them, the `CLAUDE.local.md` trap, "read AGENTS.md" in words, the SessionStart double-load
+- `dead-import`: `@path` imports of missing files, and past the four hops Claude Code follows
+- `dead-glob`: path-scoped rules that match no file, across Claude, Cursor, Copilot, Kiro and Windsurf/Devin — plus a Claude rule scoped with `globs:` instead of `paths:`
+- New surfaces: `.devin/rules`, `.windsurf/rules` (with the 12,000-character limit), `.kiro/steering` (and `#[[file:…]]` references), `.cursorrules`, `.cursor/commands`, `.github/prompts`, Junie, Continue, JetBrains AI Assistant
+- `--format github|gitlab|azure`, and free inline PR annotations from the Action
 
 ## Later, on demand
 

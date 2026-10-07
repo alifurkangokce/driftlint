@@ -8,7 +8,7 @@
   "plugins": [
     {
       "name": "driftlint",
-      "source": "./",
+      "source": "./plugins/driftlint",
       "description": "Find and fix the claims in your agent context files (CLAUDE.md, AGENTS.md, skills) that your code no longer supports."
     }
   ]

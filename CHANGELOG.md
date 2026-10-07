@@ -23,6 +23,10 @@ Templates, examples, skill bundles (`.agents/` — which Claude documents it nev
 
 **Validation.** Run over 61 real repositories from the August corpus, against 0.19: no existing finding changed. On the first 29, the new rules produced 23 findings; hand-labelling found 7 false positives in four classes (templates and examples, skill bundles, a container payload, an on-demand pointer), each now excluded and pinned by a test. On 32 repositories not looked at while tuning, 11 findings: 10 clearly real, 1 borderline. The clearest: a six-line CLAUDE.md saying documentation had moved, above a 127-line AGENTS.md titled *Engineering Protocol — scope: entire repository*, which Claude Code never read.
 
+**Plugin, fixed for Anthropic's directory.** Review rejected it for running `npx @alifurkangokce/driftlint` without an exact version: code that runs by name can change after it was reviewed. The plugin's commands now run the exact version they ship with, the unpinned `github:` fallback is gone, and a packaging test fails the build when any pin drifts from `package.json` — the same treatment the MCP engine pin and the plugin manifest version got earlier. The plugin also moved to `plugins/driftlint/`: with the whole repository as the plugin, `claude plugin validate --strict` now rejects this repo's own contributor `CLAUDE.md` as plugin context. Install commands are unchanged.
+
+**The Action runs the version it is tagged at.** It used to run `@latest` from npm whatever ref you pinned, so `uses: alifurkangokce/driftlint@v0.17.0` quietly ran the newest scanner. It now runs exactly the version in that ref.
+
 **This README was wrong, and is fixed.** It said Claude Code reads only CLAUDE.md, that the request was "not planned", that nobody else verifies references against the tree (Claude Code's `/doctor prompt-audit` now does, interactively — see the comparison for the honest split), that the next milestone was an LLM pass shipped in August, and it pinned pre-commit to v0.7.0.
 
 - 162-test suite.

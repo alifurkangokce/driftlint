@@ -3,7 +3,7 @@
 [driftlint](https://github.com/alifurkangokce/driftlint) as an MCP server — the linter for AI context files, itself agent-callable.
 
 ```bash
-claude mcp add driftlint -- npx -y @alifurkangokce/driftlint-mcp
+claude mcp add driftlint -- npx -y @alifurkangokce/driftlint-mcp@0.1.10
 ```
 
 Two tools, lint-only by philosophy (like `@eslint/mcp` — the server reports, the agent applies):

@@ -189,7 +189,7 @@ Your key, your bill (default model `claude-opus-5`; capped at 10 files / 8 claim
 ### MCP server: agents lint their own context
 
 ```bash
-claude mcp add driftlint -- npx -y @alifurkangokce/driftlint-mcp
+claude mcp add driftlint -- npx -y @alifurkangokce/driftlint-mcp@0.1.10
 ```
 
 Two tools from [`@alifurkangokce/driftlint-mcp`](mcp/): `drift_scan` (full report, optional `diff_range`) and `drift_check` — an agent about to edit CLAUDE.md verifies the reference **before** writing it, so it never writes a dead one.

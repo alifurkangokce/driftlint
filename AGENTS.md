@@ -15,6 +15,7 @@ A linter for agent context files: it verifies that the claims in `CLAUDE.md`, `A
 - `src/discover.ts` — the surface map (which files each agent actually loads). Patterns match at any depth.
 - `test/` — one test file per release (`v10`, `v11`, …), grouped by the release that introduced the behaviour. Fixtures live in `test/fixtures/`.
 - `mcp/` — the separate `@alifurkangokce/driftlint-mcp` package. Its dependency pin is verified by `test/packaging.test.js`.
+- `plugins/driftlint/` — the Claude Code plugin: `plugins/driftlint/.claude-plugin/plugin.json` and `plugins/driftlint/commands/`. It lives in its own directory so Anthropic's review sees the plugin alone; the root `.claude-plugin/marketplace.json` points at it.
 
 ## Conventions
 
@@ -26,4 +27,4 @@ A linter for agent context files: it verifies that the claims in `CLAUDE.md`, `A
 
 ## Release
 
-Bump `package.json`, add a CHANGELOG entry describing the behaviour change rather than the diff, tag `vX.Y.Z`, and publish both packages (root first, then `mcp/`).
+Bump the version in `package.json`, `mcp/package.json` (and its engine pin) and `plugins/driftlint/.claude-plugin/plugin.json`. Then update every exact pin the plugin, the Action and the documented MCP launchers execute — `npm test` names each one it finds stale, because Anthropic's plugin directory rejects anything that runs a package without an exact version. Add a CHANGELOG entry describing the behaviour change rather than the diff, publish both packages (root first, then `mcp/`), and only then tag `vX.Y.Z`: a pinned version that isn't on npm yet breaks the plugin for everyone who installs it.

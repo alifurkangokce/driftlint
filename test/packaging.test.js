@@ -83,6 +83,7 @@ test("the plugin manifest carries the version this repo ships", () => {
 const PLUGIN_DIR = "plugins/driftlint";
 const EXECUTING_FILES = [
   ...fs.readdirSync(path.join(ROOT, PLUGIN_DIR, "commands")).map((f) => `${PLUGIN_DIR}/commands/${f}`),
+  `${PLUGIN_DIR}/README.md`, // the listing page: it states the exact command users will run
   "action.yml",
 ];
 const LAUNCHER_DOCS = ["README.md", "mcp/README.md"]; // only their `claude mcp add` lines persist into config
@@ -118,5 +119,18 @@ test("documented MCP launchers pin the published server version", () => {
       assert.ok(inv, `${rel}: launcher line names no driftlint-mcp package: ${line}`);
       assert.equal(inv.version, mcp, `${rel}: \`${line.trim()}\` must pin driftlint-mcp@${mcp}`);
     }
+  }
+});
+
+// The directory blocks a plugin without a README of at least 40 words in the
+// plugin folder (words inside code blocks don't count), and its security scan
+// expects that README to disclose what the plugin runs, fetches and writes.
+test("the plugin folder carries a README the directory will accept", () => {
+  const text = fs.readFileSync(path.join(ROOT, PLUGIN_DIR, "README.md"), "utf8");
+  const prose = text.replace(/```[\s\S]*?```/g, "");
+  const words = prose.match(/\b\w+\b/g) ?? [];
+  assert.ok(words.length >= 40, `plugins/driftlint/README.md has ${words.length} words outside code blocks; the directory needs 40`);
+  for (const disclosure of ["Network", "Reads", "Writes", "Telemetry"]) {
+    assert.match(prose, new RegExp(`\\*\\*${disclosure}:\\*\\*`), `README must disclose: ${disclosure}`);
   }
 });

@@ -299,7 +299,7 @@ The relationship to `/doctor prompt-audit` is the one between `tsc` and a code r
 
 ## What it touches
 
-No runtime dependencies, no install scripts, no telemetry, and no network call — except `--llm`, which is the one flag that sends your context files to the Anthropic API. `scan` writes nothing; `--fix` prompts per edit and only rewrites inside the scanned root. Full statement: [SECURITY.md](SECURITY.md).
+No runtime dependencies, no install scripts, no telemetry, and no network call — except `--llm`, which is the one flag that sends your context files to the Anthropic API. The only program it runs is `git`, read-only, to judge staleness and untracked files. `scan` writes nothing; `--fix` prompts per edit and only rewrites inside the scanned root. Full statement: [SECURITY.md](SECURITY.md).
 
 ## Roadmap
 

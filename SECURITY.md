@@ -22,6 +22,7 @@ Nothing, unless you ask:
 | `driftlint --fix` | edits context files, **one prompt per fix**, only on a TTY |
 | `driftlint --fix --yes` | same edits with no prompt — for scripts that already reviewed the diff |
 | `driftlint --update-baseline` | `.driftlint-baseline.json` |
+| `driftlint --diff` | a temporary git worktree of the base commit in your OS temp directory, removed when the scan finishes |
 | `driftlint twins` | the mirrored marker block in `CLAUDE.md`/`AGENTS.md` |
 | `driftlint memory propose` | a proposal file under `.agent-memory/` |
 
@@ -36,7 +37,7 @@ Everything else is local:
 - **No telemetry.** Not opt-out — absent. This is a [stated non-goal](ROADMAP.md#non-goals).
 - **No runtime dependencies.** `package.json` has an empty `dependencies` block; `npm install` fetches TypeScript and nothing else.
 - **No install scripts.** No `postinstall`, `preinstall` or `prepare` hook that runs on your machine.
-- **No `eval`, no `Function`, no `child_process`.** driftlint reads command *names* out of your docs and looks them up in `package.json` and your `Makefile`; it never runs them.
+- **No `eval`, no `Function`, no shell.** driftlint reads command *names* out of your docs and looks them up in `package.json` and your `Makefile`; it never runs them. The only program it starts is `git`, always with an argument array (never through a shell): `log`, `ls-files`, `check-ignore` and `rev-parse` on every scan, to judge staleness and spot untracked context files — all read-only — and, with `--diff` only, `merge-base`, `diff --name-status` and a temporary `worktree add`/`worktree remove`. *(An earlier version of this page said "no `child_process`". That was wrong: the git calls above have always been there.)*
 
 ## The MCP server
 
